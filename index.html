@@ -2,529 +2,349 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Horizont IA - Consultor Virtual</title>
-    
-    <!-- Bibliotecas -->
-    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horizont IA</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        /* Reset e Base */
+        :root {
+            --primary-color: #1f6feb;
+            --primary-hover: #1a5cc6;
+            --secondary-color: #238636;
+            --background-color: #0d1117;
+            --surface-color: #161b22;
+            --surface-hover: #1c2128;
+            --border-color: #30363d;
+            --text-color: #f0f6fc;
+            --text-secondary: #8b949e;
+            --danger-color: #f85149;
+            --success-color: #2ea043;
+            --spacing-xs: 5px;
+            --spacing-sm: 10px;
+            --spacing-md: 15px;
+            --spacing-lg: 20px;
+            --border-radius: 6px;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
         }
-        
-        input, textarea {
-            -webkit-user-select: text;
-            user-select: text;
-        }
-        
-        html {
-            height: 100%;
-            overflow: hidden;
-        }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            height: 100%;
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* App Container */
-        .app {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
             height: 100vh;
+            overflow: hidden;
+        }
+
+        #root {
+            height: 100vh;
+        }
+
+        .app {
             display: flex;
-            flex-direction: column;
-            position: relative;
+            height: 100vh;
+            overflow: hidden;
         }
-        
-        /* Header Mobile */
-        .header-mobile {
-            height: 56px;
-            background: linear-gradient(135deg, #1e3a5f 0%, #0d1929 100%);
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        
-        .menu-btn {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 24px;
-            padding: 8px;
-            margin-right: 12px;
-            cursor: pointer;
-        }
-        
-        .header-title {
-            flex: 1;
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            color: #10a37f;
-        }
-        
-        .header-action {
-            background: none;
-            border: none;
-            color: #10a37f;
-            font-size: 22px;
-            padding: 8px;
-            cursor: pointer;
-        }
-        
-        /* Sidebar */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 1999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        
-        .sidebar-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        
+
+        /* Sidebar Styles */
         .sidebar {
-            position: fixed;
-            top: 0;
-            left: -280px;
-            width: 280px;
-            height: 100%;
-            background: #0d1117;
-            z-index: 2000;
-            transition: left 0.3s ease;
+            width: 300px;
+            background-color: var(--surface-color);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            box-shadow: 2px 0 12px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            height: 100vh;
+            box-shadow: var(--shadow);
         }
-        
-        .sidebar.open {
-            left: 0;
-        }
-        
+
         .sidebar-header {
-            padding: 20px;
-            background: linear-gradient(135deg, #1e3a5f 0%, #0d1929 100%);
-            border-bottom: 1px solid #30363d;
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--surface-color);
         }
-        
+
         .sidebar-logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #10a37f;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-color);
         }
-        
+
         .user-info {
-            font-size: 14px;
-            color: #8b949e;
-            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
         }
-        
-        .logout-btn {
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: #f0f6fc;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            width: 100%;
-            cursor: pointer;
-        }
-        
+
         .new-chat-btn {
-            margin: 16px;
-            background: #238636;
+            margin: var(--spacing-md);
+            padding: var(--spacing-sm);
+            background-color: var(--primary-color);
+            color: var(--text-color);
             border: none;
-            color: #fff;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            border-radius: var(--border-radius);
             cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+            width: calc(100% - var(--spacing-md) * 2);
+            font-weight: 500;
         }
-        
+
+        .new-chat-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
         .chat-list {
             flex: 1;
             overflow-y: auto;
-            padding: 0 16px;
+            padding: var(--spacing-sm);
         }
-        
+
+        .chat-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-list::-webkit-scrollbar-track {
+            background: var(--surface-color);
+        }
+
+        .chat-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
         .chat-item {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
         }
-        
+
+        .chat-item:hover {
+            background-color: var(--surface-hover);
+        }
+
         .chat-item.active {
-            background: #1f6feb;
-            border-color: #388bfd;
+            background-color: var(--surface-hover);
+            box-shadow: var(--shadow);
         }
-        
+
         .chat-item-title {
             flex: 1;
-            font-size: 14px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            margin-right: var(--spacing-sm);
         }
-        
+
         .delete-chat-btn {
             background: none;
             border: none;
-            color: #f85149;
-            font-size: 18px;
-            padding: 4px 8px;
+            color: var(--danger-color);
             cursor: pointer;
+            padding: var(--spacing-xs);
+            opacity: 0.7;
+            transition: all 0.2s ease;
+            border-radius: var(--border-radius);
         }
-        
-        /* Main Content */
+
+        .delete-chat-btn:hover {
+            opacity: 1;
+            background-color: rgba(248, 81, 73, 0.1);
+        }
+
+        /* Main Content Styles */
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding-top: 56px;
-            height: 100vh;
-            background: #0d1117;
+            overflow: hidden;
+            background-color: var(--background-color);
         }
-        
-        /* Messages Container */
+
         .messages-container {
             flex: 1;
             overflow-y: auto;
-            padding: 16px;
-            -webkit-overflow-scrolling: touch;
+            padding: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
         }
-        
+
+        .messages-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages-container::-webkit-scrollbar-track {
+            background: var(--background-color);
+        }
+
+        .messages-container::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
         .message {
-            margin-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            max-width: 90%;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            background-color: var(--surface-color);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow);
             animation: fadeIn 0.3s ease;
         }
-        
+
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        
+
         .message-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+            gap: var(--spacing-sm);
         }
-        
-        .message-avatar {
-            width: 32px;
-            height: 32px;
+
+        .user-avatar, .assistant-avatar {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            font-weight: 500;
+            box-shadow: var(--shadow);
         }
-        
-        .user-avatar {
-            background: #1f6feb;
-        }
-        
+
         .assistant-avatar {
-            background: #10a37f;
+            background-color: var(--secondary-color);
         }
-        
+
         .message-role {
-            font-size: 14px;
-            font-weight: 600;
-            color: #8b949e;
+            font-weight: 500;
+            color: var(--text-color);
         }
-        
+
         .message-content {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 16px;
-            margin-left: 42px;
-            font-size: 15px;
+            font-size: 0.95rem;
             line-height: 1.6;
-            color: #f0f6fc;
+            white-space: pre-wrap;
+            color: var(--text-color);
         }
-        
-        .message-content h1, .message-content h2, .message-content h3 {
-            margin: 16px 0 8px 0;
-            color: #58a6ff;
-        }
-        
-        .message-content p {
-            margin-bottom: 12px;
-        }
-        
-        .message-content ul, .message-content ol {
-            margin-left: 20px;
-            margin-bottom: 12px;
-        }
-        
-        .message-content code {
-            background: #30363d;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
-            font-size: 0.9em;
-        }
-        
-        .message-content pre {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 12px;
-            overflow-x: auto;
-            margin-bottom: 12px;
-        }
-        
-        /* File Preview */
-        .file-preview {
-            background: #1c2128;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .file-icon {
-            width: 40px;
-            height: 40px;
-            background: #30363d;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        
-        .file-info {
-            flex: 1;
-        }
-        
-        .file-name {
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-        
-        .file-size {
-            font-size: 12px;
-            color: #8b949e;
-        }
-        
-        /* Chart Container */
-        .chart-container {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 16px;
-            margin: 16px 0;
-            position: relative;
-        }
-        
-        .chart-actions {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            display: flex;
-            gap: 8px;
-            z-index: 10;
-        }
-        
-        .chart-btn {
-            background: rgba(16, 163, 127, 0.9);
-            border: none;
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        /* Input Area */
+
+        /* Input Area Styles */
         .input-area {
-            background: #0d1117;
-            border-top: 1px solid #30363d;
-            padding: 12px 16px 20px;
+            padding: var(--spacing-lg);
+            background-color: var(--surface-color);
+            border-top: 1px solid var(--border-color);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
         }
-        
-        .attached-files {
-            margin-bottom: 12px;
-        }
-        
-        .attached-file {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 8px 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-right: 8px;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .remove-file {
-            background: none;
-            border: none;
-            color: #f85149;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 0 4px;
-        }
-        
-        .input-wrapper {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 8px 12px;
+
+        .input-container {
             display: flex;
+            gap: var(--spacing-sm);
             align-items: flex-end;
-            gap: 8px;
         }
-        
-        .input-wrapper:focus-within {
-            border-color: #1f6feb;
-        }
-        
-        .file-btn {
-            background: none;
-            border: none;
-            color: #8b949e;
-            font-size: 22px;
-            padding: 6px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        
-        .chat-input {
+
+        textarea {
             flex: 1;
-            background: none;
-            border: none;
-            color: #f0f6fc;
-            font-size: 16px;
-            line-height: 1.5;
+            min-height: 40px;
+            max-height: 200px;
+            padding: var(--spacing-sm);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 0.95rem;
             resize: none;
             outline: none;
-            min-height: 24px;
-            max-height: 120px;
             font-family: inherit;
+            transition: border-color 0.2s ease;
         }
-        
-        .send-btn {
-            background: #10a37f;
+
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.2);
+        }
+
+        .input-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+
+        .attach-btn, .send-btn {
+            padding: var(--spacing-sm);
             border: none;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 500;
+            border-radius: var(--border-radius);
+            background-color: var(--primary-color);
+            color: var(--text-color);
             cursor: pointer;
-            flex-shrink: 0;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            min-width: 40px;
             display: flex;
             align-items: center;
-            gap: 6px;
-        }
-        
-        .send-btn:disabled {
-            background: #30363d;
-            color: #8b949e;
-        }
-        
-        /* Loading Animation */
-        .loading {
-            display: flex;
-            gap: 4px;
-            padding: 20px;
             justify-content: center;
         }
-        
-        .loading-dot {
-            width: 8px;
-            height: 8px;
-            background: #8b949e;
-            border-radius: 50%;
-            animation: pulse 1.4s ease-in-out infinite;
+
+        .attach-btn:hover, .send-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
         }
-        
-        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes pulse {
-            0%, 60%, 100% {
-                transform: scale(1);
-                opacity: 1;
+
+        .attach-btn:active, .send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-lg);
+            color: var(--text-secondary);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                z-index: 1000;
+                transform: translateX(-100%);
             }
-            30% {
-                transform: scale(1.5);
-                opacity: 0.5;
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .message {
+                max-width: 100%;
             }
         }
-        
+
         /* Login Screen */
         .login-screen {
             height: 100vh;
@@ -532,620 +352,281 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+            background-color: var(--background-color);
         }
-        
+
         .login-box {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 16px;
-            padding: 32px;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
-        
-        .login-logo {
-            text-align: center;
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        
+
         .login-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
             text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            color: #10a37f;
-            margin-bottom: 8px;
+            color: var(--text-color);
         }
-        
-        .login-subtitle {
-            text-align: center;
-            font-size: 16px;
-            color: #8b949e;
-            margin-bottom: 32px;
-        }
-        
+
         .login-input {
             width: 100%;
-            background: #161b22;
-            border: 1px solid #30363d;
-            color: #f0f6fc;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 16px;
-            outline: none;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 1rem;
         }
-        
-        .login-input:focus {
-            border-color: #1f6feb;
-        }
-        
+
         .login-btn {
             width: 100%;
-            background: #10a37f;
-            border: none;
-            color: #fff;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        
-        .login-error {
-            background: #f851491a;
-            border: 1px solid #f85149;
-            color: #f85149;
             padding: 12px;
-            border-radius: 8px;
-            margin-top: 16px;
-            text-align: center;
-            font-size: 14px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        
-        .login-info {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 24px;
-            text-align: center;
-            font-size: 14px;
-            color: #8b949e;
+
+        .login-btn:hover {
+            background-color: #1a5cc6;
         }
-        
-        .login-info strong {
-            color: #f0f6fc;
-        }
-        
-        /* Presentation Modal */
-        .modal-overlay {
+
+        /* Mobile Styles */
+        .sidebar-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
-            z-index: 3000;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .header-mobile {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 15px;
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
         }
-        
-        .modal-content {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 16px;
-            padding: 24px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-        }
-        
-        .modal-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #f0f6fc;
-        }
-        
-        .modal-close {
+
+        .menu-btn {
             background: none;
             border: none;
-            color: #8b949e;
-            font-size: 24px;
+            color: var(--text-color);
+            font-size: 1.2rem;
             cursor: pointer;
-            padding: 4px;
+            padding: 5px;
         }
-        
-        .modal-input {
-            width: 100%;
-            background: #161b22;
-            border: 1px solid #30363d;
-            color: #f0f6fc;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            outline: none;
-        }
-        
-        .modal-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .modal-btn {
-            background: #10a37f;
-            border: none;
-            color: #fff;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 16px;
+
+        .header-title {
+            flex: 1;
+            text-align: center;
             font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            color: var(--text-color);
         }
-        
-        .modal-btn.secondary {
-            background: #1f6feb;
+
+        /* Markdown Styles */
+        .message-content pre {
+            background-color: var(--background-color);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            color: var(--text-color);
         }
-        
-        /* Desktop Adjustments */
-        @media (min-width: 768px) {
-            .header-mobile {
-                display: none;
-            }
-            
-            .sidebar {
-                position: relative;
-                left: 0;
-                width: 320px;
-                box-shadow: none;
-                border-right: 1px solid #30363d;
-            }
-            
-            .sidebar-overlay {
-                display: none;
-            }
-            
-            .main-content {
-                padding-top: 0;
-            }
-            
-            .app {
-                flex-direction: row;
-            }
-            
-            .messages-container {
-                padding: 24px;
-            }
-            
-            .message-content {
-                max-width: 800px;
-            }
-            
-            .input-area {
-                padding: 20px 24px;
-            }
-            
-            .input-wrapper {
-                max-width: 800px;
-                margin: 0 auto;
-            }
+
+        .message-content code {
+            background-color: var(--background-color);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--text-color);
         }
-        
-        /* Utilities */
-        .hidden {
-            display: none !important;
+
+        .message-content p {
+            margin-bottom: 10px;
+            color: var(--text-color);
         }
-        
-        /* Safe area for iOS */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .input-area {
-                padding-bottom: calc(20px + env(safe-area-inset-bottom));
-            }
+
+        .message-content ul, .message-content ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            color: var(--text-color);
         }
-        
+
+        .message-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 10px 0;
+            color: var(--text-color);
+        }
+
+        .message-content th, .message-content td {
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            text-align: left;
+        }
+
+        .message-content th {
+            background-color: var(--background-color);
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 15px;
+            margin: 10px 0;
+            color: var(--text-secondary);
+        }
+
         /* Admin Panel Styles */
         .admin-panel {
             position: fixed;
             top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(13, 17, 23, 0.9);
-            z-index: 3000;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background-color: var(--surface-color);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(8px);
+            flex-direction: column;
+            z-index: 1000;
         }
-        
+
         .admin-panel.open {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .admin-panel-content {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 16px;
-            width: 95%;
-            max-width: 1400px;
-            max-height: 95vh;
-            overflow: hidden;
-            position: relative;
-            animation: slideUp 0.3s ease;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            display: flex;
-            flex-direction: column;
-        }
-        
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .admin-panel-header {
-            padding: 24px 32px;
-            background: linear-gradient(135deg, #1e3a5f 0%, #0d1929 100%);
-            border-bottom: 1px solid #30363d;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .admin-panel-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #58a6ff;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .admin-panel-close {
-            background: rgba(240, 246, 252, 0.1);
-            border: none;
-            color: #f0f6fc;
-            font-size: 20px;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .admin-panel-close:hover {
-            background: rgba(240, 246, 252, 0.2);
-            transform: scale(1.05);
-        }
-        
-        .admin-panel-tabs {
-            display: flex;
-            padding: 0 32px;
-            background: #161b22;
-            border-bottom: 1px solid #30363d;
-            gap: 8px;
-        }
-        
-        .admin-tab {
-            padding: 16px 24px;
-            color: #8b949e;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            position: relative;
-            margin-bottom: -1px;
-        }
-        
-        .admin-tab:hover {
-            color: #f0f6fc;
-            background: rgba(56, 139, 253, 0.1);
-        }
-        
-        .admin-tab.active {
-            color: #58a6ff;
-            border-bottom: 2px solid #58a6ff;
-            background: rgba(56, 139, 253, 0.1);
-        }
-        
-        .admin-tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
             right: 0;
-            height: 2px;
-            background: #58a6ff;
-            box-shadow: 0 0 8px rgba(88, 166, 255, 0.5);
         }
-        
-        .admin-panel-body {
-            padding: 32px;
-            overflow-y: auto;
+
+        .admin-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--surface-color);
+        }
+
+        .admin-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+        }
+
+        .tab-btn {
             flex: 1;
-            background: #0d1117;
+            padding: 15px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-        
-        .prompt-editor {
+
+        .tab-btn.active {
+            background-color: var(--primary-color);
+        }
+
+        .admin-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--surface-color);
+        }
+
+        .user-form {
+            background-color: var(--background-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
             display: flex;
             flex-direction: column;
-            gap: 24px;
-            max-width: 1200px;
-            margin: 0 auto;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        
-        .prompt-textarea {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 24px;
-            color: #f0f6fc;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-            font-size: 14px;
-            line-height: 1.6;
-            height: 600px;
-            resize: vertical;
-            transition: all 0.2s;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+
+        .user-form input, .user-form select {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            color: var(--text-color);
         }
-        
-        .prompt-textarea:focus {
-            border-color: #58a6ff;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
-        }
-        
-        .prompt-actions {
-            display: flex;
-            gap: 16px;
-            justify-content: flex-end;
-            padding: 16px 0;
-        }
-        
-        .prompt-btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .prompt-save {
-            background: #238636;
-            color: white;
-            border: none;
-            box-shadow: 0 2px 4px rgba(35, 134, 54, 0.2);
-        }
-        
-        .prompt-save:hover {
-            background: #2ea043;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(35, 134, 54, 0.3);
-        }
-        
-        .prompt-save:active {
-            transform: translateY(0);
-        }
-        
-        .prompt-save:disabled {
-            background: #238636;
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .prompt-cancel {
-            background: #21262d;
-            color: #f0f6fc;
-            border: 1px solid #30363d;
-        }
-        
-        .prompt-cancel:hover {
-            background: #30363d;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        
-        .prompt-cancel:active {
-            transform: translateY(0);
-        }
-        
-        .status {
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .status.success {
-            background: rgba(35, 134, 54, 0.1);
-            border: 1px solid rgba(35, 134, 54, 0.2);
-            color: #3fb950;
-        }
-        
-        .status.error {
-            background: rgba(248, 81, 73, 0.1);
-            border: 1px solid rgba(248, 81, 73, 0.2);
-            color: #f85149;
-        }
-        
-        /* Melhorias na lista de usuários */
+
         .user-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
+            gap: 15px;
         }
-        
+
         .user-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.2s;
-        }
-        
-        .user-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            border-color: #58a6ff;
-        }
-        
-        .user-card-header {
+            background-color: var(--background-color);
+            padding: 15px;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
         }
-        
-        .user-card-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #f0f6fc;
+
+        .prompt-form textarea {
+            width: 100%;
+            margin-bottom: 15px;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 6px;
         }
-        
-        .user-card-delete {
-            background: none;
+
+        .status {
+            padding: 10px;
+            margin: 10px 20px;
+            border-radius: 6px;
+            color: var(--text-color);
+        }
+
+        .status.success {
+            background-color: var(--success-color);
+        }
+
+        .status.error {
+            background-color: var(--danger-color);
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            background-color: var(--danger-color);
+            color: var(--text-color);
             border: none;
-            color: #f85149;
+            border-radius: 6px;
+            padding: 10px;
             cursor: pointer;
-            font-size: 20px;
-            padding: 4px;
-            border-radius: 4px;
-            transition: all 0.2s;
+            width: 100%;
+            margin-top: 10px;
+            transition: opacity 0.2s;
         }
-        
-        .user-card-delete:hover {
-            background: rgba(248, 81, 73, 0.1);
-            transform: scale(1.1);
-        }
-        
-        .user-card-info {
-            font-size: 14px;
-            color: #8b949e;
-            margin-top: 8px;
-        }
-        
-        .user-form {
-            background: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 32px;
-        }
-        
-        .form-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #f0f6fc;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .form-input {
-            background: #0d1117;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            padding: 12px 16px;
-            color: #f0f6fc;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .form-input:focus {
-            border-color: #58a6ff;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
-        }
-        
-        .form-submit {
-            background: #238636;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-        }
-        
-        .form-submit:hover {
-            background: #2ea043;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(35, 134, 54, 0.3);
+
+        .logout-btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback } = React;
         
@@ -1165,7 +646,9 @@
             
             getChats: async (username) => {
                 const response = await fetch(`${API_BASE}/chats/${username}`);
-                return response.json();
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return data.chats;
             },
             
             createChat: async (username, title = 'Nova Conversa') => {
@@ -1174,14 +657,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title })
                 });
-                return response.json();
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return { id: data.id, title: data.title };
             },
             
             deleteChat: async (username, chatId) => {
                 const response = await fetch(`${API_BASE}/chats/${username}/${chatId}`, {
                     method: 'DELETE'
                 });
-                return response.json();
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return true;
             },
             
             sendMessage: async (username, chatId, message, files = []) => {
@@ -1190,25 +677,57 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, chatId, message, files })
                 });
-                return response.json();
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return {
+                    response: data.response,
+                    chart_data: data.chart_data
+                };
             },
             
-            updateChatTitle: async (username, chatId, title) => {
-                const response = await fetch(`${API_BASE}/chats/${username}/${chatId}/update`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title })
-                });
-                return response.json();
+            getUsers: async () => {
+                const response = await fetch(`${API_BASE}/admin/users`);
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return data.users;
             },
             
-            generatePresentation: async (username, chatId, clientName) => {
-                const response = await fetch(`${API_BASE}/generate-presentation`, {
+            createUser: async (userData) => {
+                const response = await fetch(`${API_BASE}/admin/users`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, chatId, clientName })
+                    body: JSON.stringify(userData)
                 });
-                return response.json();
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return true;
+            },
+            
+            deleteUser: async (username) => {
+                const response = await fetch(`${API_BASE}/admin/users/${username}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return true;
+            },
+            
+            getPrompt: async () => {
+                const response = await fetch(`${API_BASE}/admin/config/prompt`);
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return data.prompt;
+            },
+            
+            updatePrompt: async (prompt, username = 'admin') => {
+                const response = await fetch(`${API_BASE}/admin/config/prompt`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, username })
+                });
+                const data = await response.json();
+                if (!data.success) throw new Error(data.message);
+                return true;
             }
         };
         
@@ -1232,10 +751,11 @@
                         setError(result.message || 'Erro ao fazer login');
                     }
                 } catch (err) {
-                    setError('Erro de conexão');
+                    console.error('Erro no login:', err);
+                    setError('Erro de conexão com o servidor');
+                } finally {
+                    setLoading(false);
                 }
-                
-                setLoading(false);
             };
             
             return (
@@ -1254,6 +774,7 @@
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
                                 autoComplete="username"
+                                disabled={loading}
                             />
                             <input
                                 type="password"
@@ -1263,13 +784,14 @@
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 autoComplete="current-password"
+                                disabled={loading}
                             />
                             <button type="submit" className="login-btn" disabled={loading}>
-                                {loading ? 'Entrando...' : 'Entrar'}
+                                {loading ? '⏳ Entrando...' : '🔑 Entrar'}
                             </button>
                         </form>
                         
-                        {error && <div className="login-error">{error}</div>}
+                        {error && <div className="login-error">❌ {error}</div>}
                         
                         <div className="login-info">
                             <strong>Demo:</strong><br />
@@ -1532,7 +1054,7 @@
                     
                     // Extract calculations
                     let yPos = 100;
-                    const messages = chatData?.messages || [];
+                    const messages = chatData && chatData.messages ? chatData.messages : [];
                     
                     messages.forEach(msg => {
                         if (msg.role === 'assistant' && msg.content.includes('R$')) {
@@ -1555,7 +1077,7 @@
             };
             
             const shareWhatsApp = () => {
-                const messages = chatData?.messages || [];
+                const messages = chatData && chatData.messages ? chatData.messages : [];
                 let summary = `🏢 *Horizont Investimentos*\n\n`;
                 summary += `📊 Proposta para ${clientName || 'Cliente'}\n\n`;
                 
@@ -1612,51 +1134,88 @@
         const AdminPanel = ({ isOpen, onClose }) => {
             const [activeTab, setActiveTab] = useState('users');
             const [users, setUsers] = useState([]);
-            const [newUser, setNewUser] = useState({ username: '', password: '', name: '', cpf: '' });
-            const [selectedUser, setSelectedUser] = useState(null);
-            const [userChats, setUserChats] = useState([]);
-            const [selectedChat, setSelectedChat] = useState(null);
-            const [loading, setLoading] = useState(false);
+            const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
             const [promptText, setPromptText] = useState('');
+            const [loading, setLoading] = useState(false);
             const [status, setStatus] = useState({ type: '', message: '' });
 
+            // Carregar dados quando o painel abrir
             useEffect(() => {
                 if (isOpen) {
-                    if (activeTab === 'users') {
-                        loadUsers();
-                    } else if (activeTab === 'prompt') {
-                        loadPrompt();
-                    }
+                    loadData();
                 }
             }, [isOpen, activeTab]);
 
-            const loadUsers = async () => {
+            const loadData = async () => {
+                setLoading(true);
                 try {
-                    const response = await fetch(`/api/admin/users`);
-                    const data = await response.json();
-                    if (data.success) {
-                        setUsers(data.users);
+                    if (activeTab === 'users') {
+                        const users = await api.getUsers();
+                        setUsers(users);
+                    } else if (activeTab === 'prompt') {
+                        const prompt = await api.getPrompt();
+                        setPromptText(prompt);
                     }
                 } catch (err) {
-                    console.error('Erro ao carregar usuários:', err);
+                    console.error('Erro ao carregar dados:', err);
+                    setStatus({
+                        type: 'error',
+                        message: 'Erro ao carregar dados'
+                    });
+                } finally {
+                    setLoading(false);
                 }
             };
 
-            const loadPrompt = async () => {
-                try {
-                    const response = await fetch('/api/admin/config/prompt');
-                    const data = await response.json();
-                    if (data.success) {
-                        setPromptText(data.prompt);
-                    } else {
-                        throw new Error('Erro ao carregar');
-                    }
-                } catch (error) {
-                    console.error('Erro ao carregar prompt:', error);
+            const handleCreateUser = async (e) => {
+                e.preventDefault();
+                if (!newUser.username || !newUser.password) {
                     setStatus({
                         type: 'error',
-                        message: 'Erro ao carregar o prompt'
+                        message: 'Preencha todos os campos'
                     });
+                    return;
+                }
+
+                setLoading(true);
+                try {
+                    await api.createUser(newUser);
+                    setStatus({
+                        type: 'success',
+                        message: 'Usuário criado com sucesso!'
+                    });
+                    setNewUser({ username: '', password: '', role: 'user' });
+                    await loadData();
+                } catch (err) {
+                    console.error('Erro ao criar usuário:', err);
+                    setStatus({
+                        type: 'error',
+                        message: err.message || 'Erro ao criar usuário'
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleDeleteUser = async (username) => {
+                if (!confirm(`Deletar usuário ${username}?`)) return;
+
+                setLoading(true);
+                try {
+                    await api.deleteUser(username);
+                    setStatus({
+                        type: 'success',
+                        message: 'Usuário deletado com sucesso!'
+                    });
+                    await loadData();
+                } catch (err) {
+                    console.error('Erro ao deletar usuário:', err);
+                    setStatus({
+                        type: 'error',
+                        message: err.message || 'Erro ao deletar usuário'
+                    });
+                } finally {
+                    setLoading(false);
                 }
             };
 
@@ -1671,261 +1230,119 @@
 
                 setLoading(true);
                 try {
-                    const response = await fetch('/api/admin/config/prompt', {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ prompt: promptText })
+                    await api.updatePrompt(promptText);
+                    setStatus({
+                        type: 'success',
+                        message: 'Prompt atualizado com sucesso!'
                     });
-
-                    if (response.ok) {
-                        setStatus({
-                            type: 'success',
-                            message: '✅ Prompt atualizado com sucesso!'
-                        });
-                        setTimeout(() => setStatus({ type: '', message: '' }), 3000);
-                    } else {
-                        throw new Error('Erro ao salvar');
-                    }
-                } catch (error) {
-                    console.error('Erro ao salvar prompt:', error);
+                } catch (err) {
+                    console.error('Erro ao salvar prompt:', err);
                     setStatus({
                         type: 'error',
-                        message: '❌ Erro ao salvar o prompt'
+                        message: err.message || 'Erro ao salvar prompt'
                     });
-                }
-                setLoading(false);
-            };
-
-            const createUser = async (e) => {
-                e.preventDefault();
-                if (!newUser.username || !newUser.password || !newUser.name || !newUser.cpf) {
-                    alert('Todos os campos são obrigatórios!');
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/api/admin/users', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newUser)
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        alert('Representante criado com sucesso!');
-                        setNewUser({ username: '', password: '', name: '', cpf: '' });
-                        loadUsers();
-                    } else {
-                        alert(data.message);
-                    }
-                } catch (err) {
-                    alert('Erro ao criar representante');
-                }
-            };
-
-            const deleteUser = async (username) => {
-                if (!confirm(`Deletar usuário ${username}?`)) return;
-
-                try {
-                    const response = await fetch(`/api/admin/users/${username}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                        loadUsers();
-                        if (selectedUser === username) {
-                            setSelectedUser(null);
-                            setUserChats([]);
-                        }
-                    }
-                } catch (err) {
-                    alert('Erro ao deletar usuário');
-                }
-            };
-
-            const loadUserChats = async (username) => {
-                setLoading(true);
-                try {
-                    const response = await fetch(`/api/admin/users/${username}/chats`);
-                    const data = await response.json();
-                    if (data.success) {
-                        setUserChats(data.chats);
-                        setSelectedUser(username);
-                    }
-                } catch (err) {
-                    console.error('Erro ao carregar chats:', err);
-                }
-                setLoading(false);
-            };
-
-            const loadChatDetails = async (username, chatId) => {
-                try {
-                    const response = await fetch(`/api/admin/users/${username}/chats/${chatId}`);
-                    const data = await response.json();
-                    if (data.success) {
-                        setSelectedChat(data.chat);
-                    }
-                } catch (err) {
-                    console.error('Erro ao carregar detalhes:', err);
+                } finally {
+                    setLoading(false);
                 }
             };
 
             return (
                 <div className={`admin-panel ${isOpen ? 'open' : ''}`}>
-                    <div className="admin-panel-content">
-                        <div className="admin-panel-header">
-                            <div className="admin-panel-title">🛠️ Painel Administrativo</div>
-                            <button className="admin-panel-close" onClick={onClose}>×</button>
-                        </div>
-
-                        <div className="admin-panel-tabs">
-                            <div 
-                                className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('users')}
-                            >
-                                👥 Usuários
-                            </div>
-                            <div 
-                                className={`admin-tab ${activeTab === 'prompt' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('prompt')}
-                            >
-                                ⚙️ Configuração do Prompt
-                            </div>
-                        </div>
-
-                        <div className="admin-panel-body">
-                            {activeTab === 'prompt' && (
-                                <div className="prompt-editor">
-                                    <textarea
-                                        className="prompt-textarea"
-                                        value={promptText}
-                                        onChange={(e) => setPromptText(e.target.value)}
-                                        placeholder="Digite o prompt do Claude aqui..."
-                                    />
-                                    {status.message && (
-                                        <div className={`status ${status.type}`}>
-                                            {status.message}
-                                        </div>
-                                    )}
-                                    <div className="prompt-actions">
-                                        <button 
-                                            className="prompt-btn prompt-cancel"
-                                            onClick={onClose}
-                                        >
-                                            ❌ Cancelar
-                                        </button>
-                                        <button 
-                                            className="prompt-btn prompt-save"
-                                            onClick={handleSavePrompt}
-                                            disabled={loading}
-                                        >
-                                            {loading ? '⏳ Salvando...' : '💾 Salvar Alterações'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                            {activeTab === 'users' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                    {/* Criar Novo Usuário */}
-                                    <div className="user-form">
-                                        <div className="form-title">
-                                            ➕ Criar Novo Representante
-                                        </div>
-                                        <form onSubmit={createUser}>
-                                            <div className="form-grid">
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="Nome completo"
-                                                    value={newUser.name}
-                                                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="CPF"
-                                                    value={newUser.cpf}
-                                                    onChange={(e) => setNewUser({ ...newUser, cpf: e.target.value })}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="Login"
-                                                    value={newUser.username}
-                                                    onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-                                                />
-                                                <input
-                                                    type="password"
-                                                    className="form-input"
-                                                    placeholder="Senha"
-                                                    value={newUser.password}
-                                                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                                                />
-                                            </div>
-                                            <button type="submit" className="form-submit">
-                                                ➕ Criar Representante
-                                            </button>
-                                        </form>
-                                    </div>
-
-                                    {/* Lista de Usuários */}
-                                    <div className="user-list">
-                                        {users.map(user => (
-                                            <div key={user.username} className="user-card">
-                                                <div className="user-card-header">
-                                                    <div className="user-card-name">
-                                                        {user.name}
-                                                    </div>
-                                                    <button
-                                                        onClick={() => deleteUser(user.username)}
-                                                        className="user-card-delete"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                                <div className="user-card-info">
-                                                    Login: {user.username}
-                                                </div>
-                                                <div className="user-card-info">
-                                                    CPF: {user.cpf}
-                                                </div>
-                                                <div className="user-card-info">
-                                                    {user.chatsCount} conversas
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                    <div className="admin-header">
+                        <h2>Painel Administrativo</h2>
+                        <button className="close-btn" onClick={onClose}>✕</button>
                     </div>
 
-                    {/* Modal de Detalhes do Chat */}
-                    {selectedChat && (
-                        <div className="modal-overlay" onClick={() => setSelectedChat(null)}>
-                            <div className="modal-content" style={{ maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-                                <div className="modal-header">
-                                    <h2 className="modal-title">📋 Detalhes da Conversa</h2>
-                                    <button className="modal-close" onClick={() => setSelectedChat(null)}>✕</button>
-                                </div>
+                    <div className="admin-tabs">
+                        <button 
+                            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('users')}
+                        >
+                            👥 Usuários
+                        </button>
+                        <button 
+                            className={`tab-btn ${activeTab === 'prompt' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('prompt')}
+                        >
+                            🤖 Prompt
+                        </button>
+                    </div>
 
-                                <div style={{ fontSize: '14px' }}>
-                                    {selectedChat.messages.map((msg, idx) => (
-                                        <div key={idx} style={{
-                                            padding: '12px',
-                                            marginBottom: '8px',
-                                            background: msg.role === 'user' ? '#1f6feb' : '#161b22',
-                                            borderRadius: '8px'
-                                        }}>
-                                            <div style={{ fontWeight: 500, marginBottom: '4px' }}>
-                                                {msg.role === 'user' ? '👤 Cliente' : '🎯 Consultor'}
-                                            </div>
-                                            <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                                        </div>
-                                    ))}
+                    {status.message && (
+                        <div className={`status ${status.type}`}>
+                            {status.message}
+                        </div>
+                    )}
+
+                    {activeTab === 'users' && (
+                        <div className="admin-content">
+                            <form onSubmit={handleCreateUser} className="user-form">
+                                <h3>Criar Novo Usuário</h3>
+                                <div className="form-group">
+                                    <input
+                                        type="text"
+                                        placeholder="Usuário"
+                                        value={newUser.username}
+                                        onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+                                        disabled={loading}
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Senha"
+                                        value={newUser.password}
+                                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                                        disabled={loading}
+                                    />
+                                    <select
+                                        value={newUser.role}
+                                        onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                                        disabled={loading}
+                                    >
+                                        <option value="user">Usuário</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
                                 </div>
+                                <button type="submit" disabled={loading}>
+                                    {loading ? '⏳ Criando...' : '➕ Criar Usuário'}
+                                </button>
+                            </form>
+
+                            <div className="user-list">
+                                {users.map(user => (
+                                    <div key={user.id} className="user-card">
+                                        <div className="user-info">
+                                            <h4>{user.username}</h4>
+                                            <p>Função: {user.role}</p>
+                                            <p>Criado em: {new Date(user.created_at).toLocaleString()}</p>
+                                            <p>Último login: {user.last_login ? new Date(user.last_login).toLocaleString() : 'Nunca'}</p>
+                                        </div>
+                                        <button 
+                                            className="delete-btn"
+                                            onClick={() => handleDeleteUser(user.username)}
+                                            disabled={loading}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'prompt' && (
+                        <div className="admin-content">
+                            <div className="prompt-form">
+                                <h3>Configurar Prompt do Sistema</h3>
+                                <textarea
+                                    value={promptText}
+                                    onChange={(e) => setPromptText(e.target.value)}
+                                    placeholder="Digite o prompt do sistema..."
+                                    rows={10}
+                                    disabled={loading}
+                                />
+                                <button onClick={handleSavePrompt} disabled={loading}>
+                                    {loading ? '⏳ Salvando...' : '💾 Salvar Prompt'}
+                                </button>
                             </div>
                         </div>
                     )}
@@ -1933,30 +1350,32 @@
             );
         };
         
-        // Main App Component
+        // App Component
         const App = () => {
             const [user, setUser] = useState(null);
             const [userName, setUserName] = useState('');
             const [isAdmin, setIsAdmin] = useState(false);
             const [chats, setChats] = useState([]);
             const [activeChat, setActiveChat] = useState(null);
-            const [sidebarOpen, setSidebarOpen] = useState(false);
             const [message, setMessage] = useState('');
-            const [attachedFiles, setAttachedFiles] = useState([]);
             const [loading, setLoading] = useState(false);
+            const [sidebarOpen, setSidebarOpen] = useState(false);
             const [showPresentation, setShowPresentation] = useState(false);
             const [showAdminPanel, setShowAdminPanel] = useState(false);
+            const [attachedFiles, setAttachedFiles] = useState([]);
             
-            const messagesEndRef = useRef(null);
             const fileInputRef = useRef(null);
+            const messagesEndRef = useRef(null);
             const inputRef = useRef(null);
             
             // Auto scroll to bottom
             useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
             }, [chats, activeChat]);
             
-            // Load chats on login
+            // Carregar chats quando usuário fizer login
             useEffect(() => {
                 if (user) {
                     loadChats();
@@ -1965,40 +1384,44 @@
             
             const loadChats = async () => {
                 try {
-                    const result = await api.getChats(user);
-                    if (result.success) {
-                        setChats(result.chats);
-                        if (result.chats.length > 0 && activeChat === null) {
-                            setActiveChat(0);
-                        }
+                    const chats = await api.getChats(user);
+                    setChats(chats);
+                    if (chats.length > 0 && activeChat === null) {
+                        setActiveChat(0);
                     }
                 } catch (err) {
                     console.error('Erro ao carregar chats:', err);
+                    alert('Erro ao carregar conversas');
                 }
             };
             
-            const handleLogin = (username, isAdminUser = false, userName = '') => {
+            const handleLogin = (username, isAdmin, name) => {
                 setUser(username);
-                setUserName(userName);
-                setIsAdmin(isAdminUser);
+                setIsAdmin(isAdmin);
+                setUserName(name);
             };
             
             const handleLogout = () => {
                 setUser(null);
+                setIsAdmin(false);
+                setUserName('');
                 setChats([]);
                 setActiveChat(null);
+                setMessage('');
+                setSidebarOpen(false);
+                setShowPresentation(false);
+                setShowAdminPanel(false);
             };
             
             const handleNewChat = async () => {
                 try {
                     const result = await api.createChat(user);
-                    if (result.success) {
-                        await loadChats();
-                        setActiveChat(chats.length);
-                        setSidebarOpen(false);
-                    }
+                    await loadChats();
+                    setActiveChat(0);
+                    setSidebarOpen(false);
                 } catch (err) {
                     console.error('Erro ao criar chat:', err);
+                    alert('Erro ao criar novo chat');
                 }
             };
             
@@ -2016,6 +1439,7 @@
                     }
                 } catch (err) {
                     console.error('Erro ao deletar:', err);
+                    alert('Erro ao deletar conversa');
                 }
             };
             
@@ -2050,14 +1474,16 @@
                         })
                     );
                     
-                    await api.sendMessage(user, chatId, currentMessage, filesData);
+                    const result = await api.sendMessage(user, chatId, currentMessage, filesData);
                     await loadChats();
                 } catch (err) {
                     console.error('Erro ao enviar:', err);
                     alert('Erro ao enviar mensagem');
+                    setMessage(currentMessage);
+                    setAttachedFiles(currentFiles);
+                } finally {
+                    setLoading(false);
                 }
-                
-                setLoading(false);
             };
             
             const handleFileSelect = (e) => {
@@ -2165,7 +1591,7 @@
                     {/* Main Content */}
                     <div className="main-content">
                         {currentChat ? (
-                            <>
+                            <React.Fragment>
                                 {/* Messages */}
                                 <div className="messages-container">
                                     {currentChat.messages.map((msg, index) => (
@@ -2180,11 +1606,11 @@
                                             </div>
                                             <div className="message-content">
                                                 {msg.files && msg.files.length > 0 && (
-                                                    <div>
+                                                    <div className="files-container">
                                                         {msg.files.map((file, i) => (
                                                             <div key={i} className="file-preview">
                                                                 <div className="file-icon">
-                                                                    {file.type?.includes('pdf') ? '📄' : '📎'}
+                                                                    {file.type && file.type.includes('pdf') ? '📄' : '📎'}
                                                                 </div>
                                                                 <div className="file-info">
                                                                     <div className="file-name">{file.name}</div>
@@ -2199,15 +1625,6 @@
                                             </div>
                                         </div>
                                     ))}
-                                    
-                                    {loading && (
-                                        <div className="loading">
-                                            <div className="loading-dot"></div>
-                                            <div className="loading-dot"></div>
-                                            <div className="loading-dot"></div>
-                                        </div>
-                                    )}
-                                    
                                     <div ref={messagesEndRef} />
                                 </div>
                                 
@@ -2216,10 +1633,18 @@
                                     {attachedFiles.length > 0 && (
                                         <div className="attached-files">
                                             {attachedFiles.map((file, index) => (
-                                                <div key={index} className="attached-file">
-                                                    <span>{file.type?.includes('pdf') ? '📄' : '📎'}</span>
-                                                    <span>{file.name}</span>
-                                                    <button className="remove-file" onClick={() => removeFile(index)}>
+                                                <div key={index} className="file-preview">
+                                                    <div className="file-icon">
+                                                        {file.type && file.type.includes('pdf') ? '📄' : '📎'}
+                                                    </div>
+                                                    <div className="file-info">
+                                                        <div className="file-name">{file.name}</div>
+                                                        <div className="file-size">{formatFileSize(file.size)}</div>
+                                                    </div>
+                                                    <button 
+                                                        className="remove-file-btn"
+                                                        onClick={() => removeFile(index)}
+                                                    >
                                                         ✕
                                                     </button>
                                                 </div>
@@ -2227,74 +1652,55 @@
                                         </div>
                                     )}
                                     
-                                    <div className="input-wrapper">
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            multiple
-                                            accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.csv"
-                                            onChange={handleFileSelect}
-                                        />
-                                        <button className="file-btn" onClick={() => fileInputRef.current?.click()}>
-                                            📎
-                                        </button>
-                                        
+                                    <div className="input-container">
                                         <textarea
                                             ref={inputRef}
-                                            className="chat-input"
-                                            placeholder="Digite sua mensagem..."
                                             value={message}
-                                            onChange={(e) => {
-                                                setMessage(e.target.value);
-                                                e.target.style.height = 'auto';
-                                                e.target.style.height = e.target.scrollHeight + 'px';
-                                            }}
-                                            onKeyPress={(e) => {
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            onKeyDown={(e) => {
                                                 if (e.key === 'Enter' && !e.shiftKey) {
                                                     e.preventDefault();
                                                     handleSendMessage();
                                                 }
                                             }}
-                                            rows={1}
+                                            placeholder="Digite sua mensagem..."
                                             disabled={loading}
                                         />
-                                        
-                                        <button 
-                                            className="send-btn"
-                                            onClick={handleSendMessage}
-                                            disabled={!message.trim() && attachedFiles.length === 0 || loading}
-                                        >
-                                            {loading ? '⏳' : '📤'}
-                                        </button>
+                                        <div className="input-buttons">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleFileSelect}
+                                                style={{ display: 'none' }}
+                                                multiple
+                                            />
+                                            <button 
+                                                className="attach-btn"
+                                                onClick={() => {
+                                                    if (fileInputRef.current) {
+                                                        fileInputRef.current.click();
+                                                    }
+                                                }}
+                                                disabled={loading}
+                                            >
+                                                📎
+                                            </button>
+                                            <button 
+                                                className="send-btn"
+                                                onClick={handleSendMessage}
+                                                disabled={loading || (!message.trim() && attachedFiles.length === 0)}
+                                            >
+                                                {loading ? '⏳' : '➤'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </>
+                            </React.Fragment>
                         ) : (
-                            <div className="messages-container">
-                                <div style={{ 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    height: '100%',
-                                    padding: '20px',
-                                    textAlign: 'center'
-                                }}>
-                                    <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏢</div>
-                                    <h2 style={{ fontSize: '24px', marginBottom: '10px', color: '#f0f6fc' }}>
-                                        Bem-vindo ao Horizont IA
-                                    </h2>
-                                    <p style={{ color: '#8b949e', marginBottom: '30px' }}>
-                                        Seu consultor inteligente para vendas
-                                    </p>
-                                    <button 
-                                        className="new-chat-btn" 
-                                        onClick={handleNewChat}
-                                        style={{ maxWidth: '200px' }}
-                                    >
-                                        ➕ Iniciar Conversa
-                                    </button>
+                            <div className="empty-state">
+                                <div className="empty-state-content">
+                                    <h2>👋 Bem-vindo ao Horizont IA</h2>
+                                    <p>Clique em "Nova Conversa" para começar</p>
                                 </div>
                             </div>
                         )}
@@ -2309,8 +1715,8 @@
                     />
                     
                     {/* Admin Panel */}
-                    {isAdmin && (
-                        <AdminPanel
+                    {showAdminPanel && (
+                        <AdminPanel 
                             isOpen={showAdminPanel}
                             onClose={() => setShowAdminPanel(false)}
                         />
