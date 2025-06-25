@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração do Claude - Horizont</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 600px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+            border: 1px solid #ebccd1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Configuração do Prompt do Claude</h1>
+        <textarea id="promptText"></textarea>
+        <button onclick="savePrompt()">Salvar Alterações</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Função para carregar o prompt atual
+        async function loadPrompt() {
+            try {
+                const response = await fetch('/api/admin/config/prompt', {
+                    headers: {
+                        'Authorization': 'Basic admin:horizont2025'
+                    }
+                });
+                const data = await response.json();
+                document.getElementById('promptText').value = data.prompt;
+            } catch (error) {
+                showStatus('Erro ao carregar o prompt', false);
+            }
+        }
+
+        // Função para salvar as alterações
+        async function savePrompt() {
+            const promptText = document.getElementById('promptText').value;
+            try {
+                const response = await fetch('/api/admin/config/prompt', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic admin:horizont2025'
+                    },
+                    body: JSON.stringify({ prompt: promptText })
+                });
+                
+                if (response.ok) {
+                    showStatus('Prompt atualizado com sucesso!', true);
+                } else {
+                    showStatus('Erro ao atualizar o prompt', false);
+                }
+            } catch (error) {
+                showStatus('Erro ao salvar as alterações', false);
+            }
+        }
+
+        // Função para mostrar mensagens de status
+        function showStatus(message, isSuccess) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'status ' + (isSuccess ? 'success' : 'error');
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Carregar o prompt quando a página carregar
+        window.onload = loadPrompt;
+    </script>
+</body>
+</html> 
