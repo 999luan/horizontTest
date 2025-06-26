@@ -861,6 +861,32 @@
             text-align: center;
             font-size: 0.9rem;
         }
+
+        .user-actions-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .delete-user-btn {
+            padding: 8px 12px;
+            background-color: var(--danger-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .delete-user-btn:hover {
+            background-color: #b91c1c;
+        }
+
+        @media (max-width: 768px) {
+            .user-actions-btns {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1417,7 +1443,7 @@
         };
 
         // User Manager Component
-        const UserManager = () => {
+        const UserManager = ({ onUserCreated }) => {
             const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
@@ -1434,6 +1460,7 @@
                     setSuccess('Usuário criado com sucesso!');
                     setNewUser({ username: '', password: '', role: 'user' });
                     setTimeout(() => setSuccess(''), 3000);
+                    if (onUserCreated) onUserCreated();
                 } catch (error) {
                     setError('Erro ao criar usuário');
                     console.error('Erro:', error);
@@ -1493,6 +1520,26 @@
                 }
             };
 
+            const handleDeleteUser = async (username) => {
+                if (!confirm(`Tem certeza que deseja deletar o representante ${username}?`)) {
+                    return;
+                }
+
+                try {
+                    await api.deleteUser(username);
+                    await fetchUsers();
+                    if (selectedUser === username) {
+                        setSelectedUser(null);
+                        setUserChats([]);
+                        setSelectedChat(null);
+                        setChatMessages([]);
+                    }
+                } catch (error) {
+                    console.error('Erro ao deletar usuário:', error);
+                    alert('Erro ao deletar usuário');
+                }
+            };
+
             const fetchUserChats = async (username) => {
                 try {
                     const response = await api.getChats(username);
@@ -1521,7 +1568,7 @@
                         <button className="close-btn" onClick={onClose}>✕</button>
                     </div>
 
-                    <UserManager />
+                    <UserManager onUserCreated={fetchUsers} />
                     <PromptManager />
 
                     <div className="admin-section">
@@ -1533,12 +1580,20 @@
                                         <span className="user-item-name">{user.username}</span>
                                         <span className="user-item-role">{user.role}</span>
                                     </div>
-                                    <button 
-                                        className="view-chats-btn"
-                                        onClick={() => fetchUserChats(user.username)}
-                                    >
-                                        Ver Conversas
-                                    </button>
+                                    <div className="user-actions-btns">
+                                        <button 
+                                            className="view-chats-btn"
+                                            onClick={() => fetchUserChats(user.username)}
+                                        >
+                                            Ver Conversas
+                                        </button>
+                                        <button 
+                                            className="delete-user-btn"
+                                            onClick={() => handleDeleteUser(user.username)}
+                                        >
+                                            🗑️ Deletar
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1788,7 +1843,7 @@
                                     {user && user.role === 'admin' && (
                                         <button 
                                             className="admin-btn"
-                                            onClick={() => setShowAdminPanel(true)}
+                                            onClick={() => setShowAdminPanel(!showAdminPanel)}
                                         >
                                             👑 Painel Admin
                                         </button>
