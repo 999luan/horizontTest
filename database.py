@@ -322,9 +322,18 @@ def update_prompt(content, username):
     
     try:
         cursor = connection.cursor()
+        
+        # Primeiro, desativar todos os prompts anteriores
         cursor.execute("""
-            INSERT INTO prompts (name, description, content, created_by, updated_by)
-            VALUES (%s, %s, %s, %s, %s)
+            UPDATE prompts 
+            SET is_active = FALSE 
+            WHERE is_active = TRUE
+        """)
+        
+        # Depois, inserir o novo prompt como ativo
+        cursor.execute("""
+            INSERT INTO prompts (name, description, content, created_by, updated_by, is_active)
+            VALUES (%s, %s, %s, %s, %s, TRUE)
         """, ('Prompt Atualizado', 'Atualização do prompt do sistema', content, username, username))
         
         connection.commit()

@@ -107,8 +107,8 @@ def setup_database():
                     default_prompt = config.get('claude_prompt', '')
                     
                     cursor.execute("""
-                        INSERT INTO prompts (name, description, content, created_by, updated_by)
-                        VALUES (%s, %s, %s, %s, %s)
+                        INSERT INTO prompts (name, description, content, created_by, updated_by, is_active)
+                        VALUES (%s, %s, %s, %s, %s, TRUE)
                     """, ('Prompt Padrão', 'Prompt padrão do sistema', default_prompt, 'admin', 'admin'))
 
             # Commit das alterações

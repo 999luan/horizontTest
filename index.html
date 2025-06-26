@@ -31,40 +31,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Reset e variáveis */
         :root {
-            /* Cores principais */
-            --primary-color: #10a37f;
-            --primary-hover: #0d8a6c;
-            --background-color: #0f0f0f;
-            --surface-color: #1a1a1a;
-            --surface-hover: #2a2a2a;
-            
-            /* Cores de texto */
+            --background-color: #1a1a1a;
+            --surface-color: #2a2a2a;
+            --surface-hover: #333333;
             --text-color: #ffffff;
-            --text-secondary: #a0a0a0;
-            
-            /* Cores de estado */
-            --border-color: #333333;
+            --text-secondary: #b3b3b3;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border-color: #404040;
             --danger-color: #dc2626;
             --success-color: #059669;
-            
-            /* Espaçamento */
+            --border-radius: 6px;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             --spacing-xs: 4px;
             --spacing-sm: 8px;
             --spacing-md: 16px;
             --spacing-lg: 24px;
-            --spacing-xl: 32px;
-            
-            /* Bordas e sombras */
-            --border-radius: 8px;
-            --border-radius-lg: 12px;
-            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-            
-            /* Transições */
-            --transition-fast: 0.2s ease;
-            --transition-normal: 0.3s ease;
         }
 
         /* Reset básico */
@@ -92,65 +75,6 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
-            background-color: var(--background-color);
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: var(--background-color);
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 280px;
-            background-color: var(--surface-color);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            color: var(--text-color);
-            position: relative;
-            z-index: 100;
-            transition: transform var(--transition-normal);
-        }
-
-        .sidebar-header {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-md);
-        }
-
-        .chat-item {
-            padding: var(--spacing-md);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            margin-bottom: var(--spacing-sm);
-            cursor: pointer;
-            transition: background-color var(--transition-fast);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: var(--surface-color);
-        }
-
-        .chat-item:hover {
-            background-color: var(--surface-hover);
-        }
-
-        .chat-item.active {
-            border-color: var(--primary-color);
-            background-color: var(--surface-hover);
         }
 
         /* Login */
@@ -229,13 +153,32 @@
             border: none;
             color: #ffffff;
             font-size: 24px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 6px;
             cursor: pointer;
+            box-shadow: var(--shadow);
         }
 
         .menu-toggle.visible {
             display: block;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background-color: #2a2a2a;
+            border-right: 1px solid #404040;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #1a1a1a;
         }
 
         /* Mobile */
@@ -246,13 +189,17 @@
 
             .sidebar {
                 position: fixed;
-                left: -280px;
-                transition: transform 0.3s ease;
+                top: 0;
+                left: -100%;
+                width: 85%;
+                height: 100%;
+                background: var(--background-color);
                 z-index: 1000;
+                transition: left 0.3s ease;
             }
 
             .sidebar.open {
-                transform: translateX(280px);
+                left: 0;
             }
 
             .sidebar-overlay {
@@ -262,99 +209,100 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 999;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 800;
             }
 
             .sidebar-overlay.show {
                 display: block;
             }
 
-            .menu-toggle {
-                display: block;
-                position: fixed;
-                top: var(--spacing-md);
-                left: var(--spacing-md);
-                z-index: 998;
-                padding: var(--spacing-sm);
-                background-color: var(--surface-color);
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                color: var(--text-color);
-                cursor: pointer;
-            }
-
-            .menu-toggle:hover {
-                background-color: var(--surface-hover);
-            }
-
             .main-content {
-                margin-left: 0;
                 padding-top: 60px;
+                width: 100%;
             }
 
             .input-container {
+                padding: 8px;
                 position: fixed;
                 bottom: 0;
                 left: 0;
                 right: 0;
-                padding: var(--spacing-sm);
-                background-color: var(--background-color);
+                background: var(--surface-color);
                 border-top: 1px solid var(--border-color);
-                z-index: 1000;
+                z-index: 100;
             }
 
-            .messages {
-                padding-bottom: 120px;
+            .input-wrapper {
+                gap: 8px;
             }
 
-            .message {
-                margin: var(--spacing-sm);
-                max-width: 100%;
+            .message-input {
+                padding: 10px;
+                min-height: 40px;
+                font-size: 15px;
             }
 
             .button {
-                padding: var(--spacing-sm) var(--spacing-md);
-                min-width: 44px;
-                min-height: 44px;
+                padding: 8px;
+                height: 40px;
+                min-width: 40px;
+            }
+
+            .messages {
+                padding: 12px;
+                padding-bottom: 80px; /* Espaço para o input fixo */
+                gap: 12px;
+            }
+
+            .message {
+                padding: 12px;
+            }
+
+            /* Ajustes para o chat container no mobile */
+            .chat-container {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                width: 100%;
             }
         }
 
-        /* Input container e textarea ajustados */
+        /* Input container ajustado */
         .input-container {
-            padding: var(--spacing-md);
-            background-color: var(--background-color);
+            padding: 16px;
+            background: var(--surface-color);
             border-top: 1px solid var(--border-color);
             position: sticky;
             bottom: 0;
-            width: 100%;
             z-index: 10;
+            margin: 0;
+            width: 100%;
         }
 
         .input-wrapper {
             display: flex;
-            gap: var(--spacing-md);
+            gap: 8px;
             align-items: flex-end;
-            background-color: var(--surface-color);
+            background: var(--background-color);
             border-radius: var(--border-radius);
-            padding: var(--spacing-sm);
+            padding: 4px;
         }
 
-        /* Input styles */
         .message-input {
-            width: 100%;
-            min-height: 60px;
-            max-height: 200px;
-            padding: var(--spacing-md);
-            background-color: var(--surface-color);
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
+            background: var(--background-color);
             color: var(--text-color);
-            font-size: 16px;
-            line-height: 1.5;
-            resize: vertical;
+            font-size: 15px;
+            resize: none;
             font-family: inherit;
-            transition: all 0.2s ease;
+            line-height: 1.5;
+            margin: 0;
         }
 
         .message-input:focus {
@@ -363,18 +311,15 @@
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
 
-        .message-input:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        /* Mobile styles */
-        @media (max-width: 768px) {
-            .message-input {
-                min-height: 50px;
-                font-size: 16px;
-                padding: var(--spacing-sm) var(--spacing-md);
-            }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 0;
         }
 
         /* Ajustes nos botões */
@@ -406,109 +351,53 @@
 
         /* Ajuste no container principal */
         .chat-container {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            background-color: var(--background-color);
-        }
-
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: var(--spacing-md);
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-md);
+            height: 100%;
+            position: relative;
+            background: var(--background-color);
         }
 
         /* Mensagens */
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
         .message {
-            max-width: 85%;
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            transition: all var(--transition-fast);
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            background: #2a2a2a;
+            border: 1px solid #404040;
         }
 
         .message.user {
-            align-self: flex-end;
-            background-color: var(--primary-color);
-        }
-
-        .message.assistant {
-            align-self: flex-start;
-        }
-
-        .message-header {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-sm);
-            color: var(--text-secondary);
-        }
-
-        .message-content {
-            color: var(--text-color);
-            line-height: 1.5;
-        }
-
-        .message-content pre {
-            background-color: var(--surface-color);
-            padding: var(--spacing-md);
-            border-radius: var(--border-radius);
-            overflow-x: auto;
-            margin: var(--spacing-md) 0;
-        }
-
-        .message-content code {
-            font-family: monospace;
-            background-color: var(--surface-hover);
-            padding: 2px 4px;
-            border-radius: 4px;
-        }
-
-        /* Input Area */
-        .input-container {
-            padding: var(--spacing-md);
-            background-color: var(--background-color);
-            border-top: 1px solid var(--border-color);
-            position: sticky;
-            bottom: 0;
-            width: 100%;
-            z-index: 10;
-        }
-
-        .input-wrapper {
-            display: flex;
-            gap: var(--spacing-md);
-            align-items: flex-end;
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-sm);
+            background: #2563eb;
+            border: none;
         }
 
         .message-input {
             flex: 1;
-            min-height: 60px;
+            min-height: 44px;
             max-height: 200px;
-            padding: var(--spacing-md);
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            color: var(--text-color);
+            padding: 12px;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #ffffff;
             font-size: 16px;
-            line-height: 1.5;
             resize: vertical;
             font-family: inherit;
-            transition: all var(--transition-fast);
+            transition: all 0.2s ease;
+            line-height: 1.5;
         }
 
         .message-input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.2);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
         }
 
         .message-input:disabled {
@@ -516,64 +405,94 @@
             cursor: not-allowed;
         }
 
-        .send-btn {
-            padding: var(--spacing-md);
-            background-color: var(--primary-color);
-            color: var(--text-color);
+        .input-container {
+            padding: 20px;
+            background: #2a2a2a;
+            border-top: 1px solid #404040;
+            position: sticky;
+            bottom: 0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
             border: none;
-            border-radius: var(--border-radius);
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color var(--transition-fast);
             font-size: 16px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .send-btn:hover:not(:disabled) {
-            background-color: var(--primary-hover);
+        .button:hover:not(:disabled) {
+            background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
-        .send-btn:disabled {
+        .button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
         }
 
-        /* Mobile Styles */
-        @media (max-width: 768px) {
-            .sidebar {
-                position: fixed;
-                left: -280px;
-                transition: transform var(--transition-normal);
-                z-index: 1000;
-            }
+        .attach-button {
+            padding: 8px 12px;
+            background: #404040;
+        }
 
-            .sidebar.open {
-                transform: translateX(280px);
-            }
+        .attach-button:hover:not(:disabled) {
+            background: #4a4a4a;
+        }
 
-            .message-input {
-                min-height: 50px;
-                font-size: 16px;
-                padding: var(--spacing-sm) var(--spacing-md);
-            }
+        .selected-files {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            border-radius: 6px;
+        }
 
-            .input-container {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: var(--spacing-sm);
-                background-color: var(--background-color);
-                border-top: 1px solid var(--border-color);
-                z-index: 1000;
-            }
+        .files-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
 
-            .input-wrapper {
-                gap: var(--spacing-sm);
-                padding: var(--spacing-xs);
-            }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            background: #2a2a2a;
+            border-radius: 4px;
+            font-size: 14px;
+        }
 
-            .messages-container {
-                padding-bottom: 100px;
-            }
+        .remove-file {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 0 4px;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .remove-file:hover {
+            color: #ef4444;
         }
 
         /* Cores e variáveis básicas - sem CSS moderno */
@@ -616,6 +535,12 @@
         }
 
         /* Sidebar Styles */
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+        }
+
         .sidebar-logo {
             font-size: 1.4rem;
             font-weight: 600;
@@ -697,20 +622,20 @@
         .chat-list {
             flex: 1;
             overflow-y: auto;
-            padding: var(--spacing-sm);
-            background-color: var(--surface-color);
+            padding: 10px;
         }
 
         .chat-item {
             display: flex;
             align-items: center;
-            padding: var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            border-radius: var(--border-radius);
-            background-color: var(--background-color);
-            border: 1px solid var(--border-color);
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
+            color: var(--text-color);
+            border: 1px solid transparent;
         }
 
         .chat-item:hover {
@@ -721,6 +646,7 @@
         .chat-item.active {
             background-color: var(--surface-hover);
             border-color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .chat-item-title {
@@ -754,7 +680,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 24px;
         }
 
         .message-header {
@@ -821,22 +747,13 @@
         }
 
         .input-container {
-            padding: var(--spacing-md);
-            background-color: var(--background-color);
-            border-top: 1px solid var(--border-color);
-            position: sticky;
-            bottom: 0;
-            width: 100%;
-            z-index: 10;
-        }
-
-        .input-wrapper {
             display: flex;
-            gap: var(--spacing-md);
+            gap: 12px;
             align-items: flex-end;
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: var(--spacing-sm);
+            background-color: var(--background-color);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
         }
 
         .input-actions {
@@ -859,6 +776,27 @@
         .attach-btn:hover {
             opacity: 1;
             background-color: var(--surface-hover);
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .attached-files {
@@ -1083,17 +1021,16 @@
 
         /* Admin Panel Styles */
         .admin-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--background-color);
-            z-index: 1100;
-            padding: var(--spacing-lg);
-            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            margin: 20px;
             display: flex;
             flex-direction: column;
+            gap: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            position: relative;
         }
 
         .admin-header {
@@ -1728,7 +1665,7 @@
             }
         };
         
-        // Login component
+        // Login Component
         const Login = function(props) {
             const onLogin = props.onLogin;
             const [username, setUsername] = useState('');
@@ -1752,50 +1689,32 @@
                 }
             };
 
-            return React.createElement('div', {
-                className: 'login-screen',
-                key: 'login-screen'
-            }, 
-                React.createElement('div', {
-                    className: 'login-box',
-                    key: 'login-box'
-                }, [
-                    React.createElement('h1', {
-                        className: 'login-title',
-                        key: 'login-title'
-                    }, 'Horizont IA'),
-                    React.createElement('form', {
-                        onSubmit: handleSubmit,
-                        className: 'login-form',
-                        key: 'login-form'
-                    }, [
-                        React.createElement('input', {
-                            type: 'text',
-                            className: 'login-input',
-                            placeholder: 'Usuário',
-                            value: username,
-                            onChange: (e) => setUsername(e.target.value),
-                            key: 'username-input'
-                        }),
-                        React.createElement('input', {
-                            type: 'password',
-                            className: 'login-input',
-                            placeholder: 'Senha',
-                            value: password,
-                            onChange: (e) => setPassword(e.target.value),
-                            key: 'password-input'
-                        }),
-                        React.createElement('button', {
-                            type: 'submit',
-                            className: 'login-btn',
-                            key: 'submit-button'
-                        }, 'Entrar'),
-                        error && React.createElement('div', {
-                            className: 'login-error',
-                            key: 'error-message'
-                        }, error)
-                    ])
-                ])
+            return (
+                <div className="login-screen">
+                    <div className="login-box">
+                        <h1 className="login-title">Horizont IA</h1>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="text"
+                                className="login-input"
+                                placeholder="Usuário"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                            />
+                            <input
+                                type="password"
+                                className="login-input"
+                                placeholder="Senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <button type="submit" className="login-btn">
+                                Entrar
+                            </button>
+                            {error && <div className="login-error">{error}</div>}
+                        </form>
+                    </div>
+                </div>
             );
         };
         
@@ -2190,49 +2109,448 @@
             const [error, setError] = React.useState(null);
             const [selectedFiles, setSelectedFiles] = React.useState([]);
 
-            // Cleanup effect
+            // Login handler
+            const handleLogin = async (user, isAdminUser, name) => {
+                setIsLoggedIn(true);
+                setUsername(user);
+                setIsAdmin(isAdminUser);
+            };
+
+            // Scroll to bottom of messages
+            const scrollToBottom = () => {
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+                }
+            };
+
             React.useEffect(() => {
-                return () => {
-                    // Cleanup de qualquer subscription ou tarefa assíncrona
+                scrollToBottom();
+            }, [messages]);
+
+            // Load chats on login
+            React.useEffect(() => {
+                if (isLoggedIn && username) {
+                    loadChats();
+                }
+            }, [isLoggedIn, username]);
+
+            // Toggle sidebar
+            const toggleSidebar = () => {
+                setIsSidebarOpen(!isSidebarOpen);
+            };
+
+            // Load user's chats
+            const loadChats = async () => {
+                try {
+                    const chats = await api.getChats(username);
+                    setChats(chats);
+                    if (chats && chats.length > 0) {
+                        setCurrentChat(chats[0]);
+                        setMessages(chats[0].messages || []);
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar chats:', error);
+                    setError('Erro ao carregar chats');
+                }
+            };
+
+            // Create new chat
+            const handleNewChat = async () => {
+                try {
+                    const newChat = await api.createChat(username);
+                    setChats([newChat].concat(chats));
+                    setCurrentChat(newChat);
                     setMessages([]);
-                    setChats([]);
-                    setCurrentChat(null);
-                };
-            }, []);
+                    setIsSidebarOpen(false); // Fechar sidebar no mobile após criar chat
+                } catch (error) {
+                    console.error('Erro ao criar novo chat:', error);
+                    setError('Não foi possível criar um novo chat. Por favor, tente novamente.');
+                }
+            };
+
+            // Delete chat
+            const handleDeleteChat = async (chatId) => {
+                try {
+                    await api.deleteChat(username, chatId);
+                    const updatedChats = chats.filter(chat => chat.id !== chatId);
+                    setChats(updatedChats);
+                    if (currentChat && currentChat.id === chatId) {
+                        setCurrentChat(updatedChats[0] || null);
+                        setMessages((updatedChats[0] && updatedChats[0].messages) || []);
+                    }
+                } catch (error) {
+                    console.error('Erro ao deletar chat:', error);
+                    setError('Não foi possível deletar o chat. Por favor, tente novamente.');
+                }
+            };
+
+            // Select chat
+            const handleSelectChat = (chat) => {
+                setCurrentChat(chat);
+                setMessages(chat.messages || []);
+                setError(null);
+                setIsSidebarOpen(false); // Fechar sidebar no mobile após selecionar chat
+            };
+
+            // Send message
+            const handleSendMessage = async () => {
+                if (!newMessage.trim() && selectedFiles.length === 0) return;
+                if (!currentChat) return;
+
+                setIsLoading(true);
+                setError(null);
+
+                try {
+                    // Criar cópia local da mensagem do usuário
+                    const userMessage = {
+                        role: 'user',
+                        content: newMessage,
+                        created_at: new Date().toISOString()
+                    };
+
+                    // Atualizar mensagens localmente primeiro
+                    const updatedMessages = [...messages, userMessage];
+                    setMessages(updatedMessages);
+                    
+                    // Limpar input e arquivos
+                    setNewMessage('');
+                    setSelectedFiles([]);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+
+                    // Enviar mensagem para o servidor
+                    const response = await api.sendMessage(
+                        username,
+                        currentChat.id,
+                        userMessage.content,
+                        selectedFiles
+                    );
+
+                    if (response.success) {
+                        // Adicionar resposta do assistente
+                        const assistantMessage = {
+                            role: 'assistant',
+                            content: response.message,
+                            created_at: new Date().toISOString()
+                        };
+                        
+                        // Atualizar mensagens com a resposta
+                        setMessages(prev => [...prev, assistantMessage]);
+                        
+                        // Atualizar o chat atual com as novas mensagens
+                        setCurrentChat(prevChat => ({
+                            ...prevChat,
+                            messages: [...updatedMessages, assistantMessage]
+                        }));
+                        
+                        // Atualizar a lista de chats
+                        setChats(prevChats => {
+                            return prevChats.map(chat => {
+                                if (chat.id === currentChat.id) {
+                                    return {
+                                        ...chat,
+                                        messages: [...updatedMessages, assistantMessage]
+                                    };
+                                }
+                                return chat;
+                            });
+                        });
+                    } else {
+                        throw new Error('Falha ao enviar mensagem');
+                    }
+
+                } catch (error) {
+                    console.error('Erro ao enviar mensagem:', error);
+                    setError(error.message || 'Não foi possível enviar a mensagem. Por favor, tente novamente.');
+                    
+                    // Remover a mensagem do usuário em caso de erro
+                    setMessages(prev => prev.slice(0, -1));
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            // Handle file selection
+            const handleFileSelect = (event) => {
+                const files = Array.from(event.target.files);
+                setSelectedFiles(files);
+            };
+
+            // Render main content
+            const renderMainContent = () => {
+                if (!isLoggedIn) {
+                    return React.createElement(Login, {
+                        onLogin: handleLogin
+                    });
+                }
+
+                return React.createElement('div', { className: 'chat-container' }, [
+                    // Messages container
+                    React.createElement('div', {
+                        key: 'messages',
+                        className: 'messages'
+                    }, [
+                        messages.map((msg, index) =>
+                            React.createElement('div', {
+                                key: index,
+                                className: 'message ' + msg.role
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: 'avatar ' + (msg.role === 'user' ? 'user-avatar' : 'assistant-avatar')
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, msg.role === 'user' ? 'Você' : 'Assistente'),
+                                    renderMessage(msg.content)
+                                ])
+                            ])
+                        ),
+                        isLoading &&
+                            React.createElement('div', {
+                                key: 'loading',
+                                className: 'message system'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: 'avatar system-avatar'
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, 'Sistema'),
+                                    'Processando...'
+                                ])
+                            ]),
+                        error &&
+                            React.createElement('div', {
+                                key: 'error',
+                                className: 'message system error',
+                                onClick: () => setError(null)
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: 'avatar error-avatar'
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, 'Erro'),
+                                    error
+                                ])
+                            ]),
+                        React.createElement('div', {
+                            key: 'end',
+                            ref: messagesEndRef
+                        })
+                    ]),
+
+                    // Input container
+                    React.createElement('div', {
+                        key: 'input',
+                        className: 'input-container'
+                    }, [
+                        React.createElement('div', {
+                            key: 'input-wrapper',
+                            className: 'input-wrapper'
+                        }, [
+                            React.createElement('textarea', {
+                                key: 'message-input',
+                                className: 'message-input',
+                                value: newMessage,
+                                onChange: (e) => setNewMessage(e.target.value),
+                                onKeyDown: (e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSendMessage();
+                                    }
+                                },
+                                placeholder: 'Digite sua mensagem...',
+                                disabled: isLoading || !currentChat
+                            }),
+                            React.createElement('div', {
+                                key: 'input-actions',
+                                className: 'input-actions'
+                            }, [
+                                React.createElement('input', {
+                                    key: 'file-input',
+                                    type: 'file',
+                                    ref: fileInputRef,
+                                    onChange: handleFileSelect,
+                                    multiple: true,
+                                    style: { display: 'none' }
+                                }),
+                                React.createElement('button', {
+                                    key: 'attach-button',
+                                    className: 'button attach-button',
+                                    onClick: () => {
+                                        if (fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    },
+                                    disabled: isLoading || !currentChat
+                                }, '📎'),
+                                React.createElement('button', {
+                                    key: 'send-button',
+                                    className: 'button send-button',
+                                    onClick: handleSendMessage,
+                                    disabled: isLoading || !currentChat || (!newMessage.trim() && selectedFiles.length === 0)
+                                }, '➤')
+                            ])
+                        ]),
+                        selectedFiles.length > 0 && React.createElement('div', {
+                            key: 'selected-files',
+                            className: 'selected-files'
+                        }, [
+                            React.createElement('div', {
+                                key: 'files-list',
+                                className: 'files-list'
+                            }, selectedFiles.map((file, index) => 
+                                React.createElement('div', {
+                                    key: index,
+                                    className: 'file-item'
+                                }, [
+                                    file.name,
+                                    React.createElement('button', {
+                                        key: 'remove-file',
+                                        className: 'remove-file',
+                                        onClick: () => {
+                                            const newFiles = selectedFiles.filter((_, i) => i !== index);
+                                            setSelectedFiles(newFiles);
+                                            if (newFiles.length === 0 && fileInputRef.current) {
+                                                fileInputRef.current.value = '';
+                                            }
+                                        }
+                                    }, '×')
+                                ])
+                            ))
+                        ])
+                    ])
+                ]);
+            };
+
+            // Render sidebar content
+            const renderSidebar = () => {
+                return [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'sidebar-header'
+                    }, [
+                        React.createElement('div', {
+                            key: 'logo',
+                            className: 'sidebar-logo'
+                        }, '💼 Horizont IA'),
+                        React.createElement('div', {
+                            key: 'user',
+                            className: 'user-info'
+                        }, [
+                            `Bem-vindo, ${username}!`,
+                            React.createElement('div', {
+                                key: 'actions',
+                                className: 'user-actions'
+                            }, [
+                                // Só mostrar botão admin se o usuário for admin
+                                isAdmin && React.createElement('button', {
+                                    key: 'admin',
+                                    className: 'admin-btn',
+                                    onClick: () => setShowAdminPanel(true)
+                                }, '⚙️ Admin'),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    className: 'logout-btn',
+                                    onClick: () => {
+                                        setIsLoggedIn(false);
+                                        setUsername('');
+                                        setChats([]);
+                                        setCurrentChat(null);
+                                        setMessages([]);
+                                    }
+                                }, '🚪 Sair')
+                            ])
+                        ])
+                    ]),
+                    React.createElement('button', {
+                        key: 'new-chat',
+                        className: 'new-chat-btn',
+                        onClick: handleNewChat
+                    }, '+ Nova Conversa'),
+                    React.createElement('div', {
+                        key: 'list',
+                        className: 'chat-list'
+                    }, chats.map(chat =>
+                        React.createElement('div', {
+                            key: chat.id,
+                            className: 'chat-item' + ((currentChat && currentChat.id === chat.id) ? ' active' : ''),
+                            onClick: () => handleSelectChat(chat)
+                        }, [
+                            React.createElement('span', {
+                                key: 'title',
+                                className: 'chat-item-title'
+                            }, chat.title || 'Nova Conversa'),
+                            React.createElement('button', {
+                                key: 'delete',
+                                className: 'delete-chat-btn',
+                                onClick: (e) => {
+                                    e.stopPropagation();
+                                    handleDeleteChat(chat.id);
+                                }
+                            }, '🗑️')
+                        ])
+                    ))
+                ];
+            };
 
             return React.createElement('div', { 
-                className: 'app' + (!isLoggedIn ? ' login-mode' : ''),
-                key: 'app-root'
+                className: 'app' + (!isLoggedIn ? ' login-mode' : '')
             }, [
+                // Admin Panel
                 showAdminPanel && React.createElement(AdminPanel, {
                     key: 'admin-panel',
                     onClose: () => setShowAdminPanel(false)
                 }),
                 
+                // Menu toggle button for mobile - only show if logged in
                 isLoggedIn && React.createElement('button', {
                     key: 'menu-toggle',
                     className: 'menu-toggle visible',
                     onClick: toggleSidebar
                 }, '☰'),
                 
+                // Sidebar overlay - only show if logged in
                 isLoggedIn && React.createElement('div', {
                     key: 'sidebar-overlay',
                     className: 'sidebar-overlay' + (isSidebarOpen ? ' show' : ''),
                     onClick: () => setIsSidebarOpen(false)
                 }),
                 
+                // Sidebar - only show if logged in
                 isLoggedIn && React.createElement('div', {
                     key: 'sidebar',
                     className: 'sidebar' + (isSidebarOpen ? ' open' : '')
                 }, renderSidebar()),
                 
+                // Main content
                 React.createElement('div', {
                     key: 'main',
                     className: isLoggedIn ? 'main-content' : ''
                 }, renderMainContent())
             ]);
         }
-
+        
         // Render App
         ReactDOM.render(
             React.createElement(App),
