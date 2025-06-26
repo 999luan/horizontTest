@@ -175,13 +175,13 @@ def process_claude_message(messages, max_retries=1):
             total_tokens = sum(len(msg["content"].split()) for msg in messages) * 2  # Estimativa aproximada
             
             # Ajustar max_tokens com base no tamanho da entrada (otimizado para 0.5 CPU)
-            max_tokens = min(2048, max(512, total_tokens))  # Reduzido para 2048 max
+            max_tokens = min(4096, max(1024, total_tokens))  # Aumentado para 4096 max
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
-                max_tokens = 1024  # Limitar tokens para respostas com gráficos
+                max_tokens = 3072  # Aumentado para 3072 para gráficos completos
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
             logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}")
