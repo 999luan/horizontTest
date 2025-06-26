@@ -513,123 +513,144 @@
 
         /* Mobile Styles */
         @media (max-width: 768px) {
+            .app {
+                position: relative;
+                overflow: hidden;
+            }
+
             .sidebar {
                 position: fixed;
-                left: -300px;
                 top: 0;
-                bottom: 0;
+                left: -100%;
+                width: 85%;
+                height: 100%;
+                background: var(--background-color);
                 z-index: 1000;
-                transition: transform 0.3s ease;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
             }
 
             .sidebar.open {
-                transform: translateX(300px);
-            }
-
-            .message {
-                max-width: 95%;
-            }
-
-            .input-container {
-                flex-direction: row;
-                align-items: flex-end;
-                gap: 8px;
-                padding: 8px;
-            }
-
-            textarea {
-                min-height: 44px;
-                max-height: 100px;
-            }
-
-            .input-buttons {
-                display: flex;
-                flex-direction: row;
-                gap: 8px;
-            }
-
-            .attach-btn, .send-btn {
-                padding: 10px;
-                min-width: 44px;
-                height: 44px;
+                left: 0;
             }
 
             .menu-toggle {
                 position: fixed;
                 top: 10px;
                 left: 10px;
-                z-index: 1001;
-                padding: 10px;
-                background-color: var(--surface-color);
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                color: var(--text-color);
+                z-index: 900;
+                background: none;
+                border: none;
+                color: white;
+                font-size: 24px;
+                padding: 8px;
                 cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 40px;
-                height: 40px;
             }
 
             .main-content {
-                margin-left: 0;
                 padding-top: 60px;
-            }
-
-            /* Mobile Admin Panel Styles */
-            .admin-panel {
-                margin: 10px;
-                padding: 10px;
-                gap: 10px;
-                max-height: calc(100vh - 80px);
-            }
-
-            .admin-section {
-                padding: 15px;
-            }
-
-            .admin-messages {
-                max-height: 400px;
-            }
-
-            .user-item {
-                flex-direction: column;
-                gap: 10px;
-                align-items: stretch;
-            }
-
-            .view-chats-btn {
                 width: 100%;
             }
 
-            .admin-chat-list {
-                max-height: 250px;
+            .messages-container {
+                padding: 10px;
             }
 
-            .admin-chat-list .chat-item {
-                flex-direction: column;
-                gap: 5px;
+            .message-content {
+                margin-left: 0;
+                padding: 12px;
             }
 
-            .chat-item-date {
-                font-size: 0.8rem;
-                color: var(--text-secondary);
+            .input-area {
+                padding: 10px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            }
+
+            .input-container {
+                padding: 8px;
+            }
+
+            .message-input {
+                font-size: 16px;
+                padding: 8px;
+            }
+
+            /* Overlay para quando o sidebar estiver aberto */
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease;
+            }
+
+            .sidebar-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Ajustes para o gráfico em mobile */
+            .chart-container {
+                margin: 10px 0;
+                padding: 10px;
+            }
+
+            .chart-actions {
+                position: static;
+                margin-bottom: 10px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 8px;
+            }
+
+            .chart-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* Ajustes para telas muito pequenas */
+        @media (max-width: 360px) {
+            .sidebar {
+                width: 90%;
             }
 
             .message-header {
                 flex-wrap: wrap;
-                gap: 8px;
             }
 
-            .message-date {
-                width: 100%;
-                text-align: right;
-                font-size: 0.75rem;
+            .message-content {
+                font-size: 14px;
             }
 
-            .user-actions {
+            .input-container {
                 flex-direction: column;
+            }
+
+            .input-actions {
+                flex-direction: row;
+                justify-content: space-between;
+                margin-top: 8px;
+            }
+        }
+
+        /* Ajustes para notch do iPhone */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .sidebar {
+                padding-top: env(safe-area-inset-top);
+            }
+
+            .menu-toggle {
+                top: calc(10px + env(safe-area-inset-top));
+            }
+
+            .main-content {
+                padding-top: calc(60px + env(safe-area-inset-top));
             }
         }
 
@@ -1228,16 +1249,29 @@
                 
                 let chart = null;
                 try {
+                    // Se data for string, tenta fazer parse
+                    let chartData = data;
+                    if (typeof data === 'string') {
+                        try {
+                            // Remove qualquer caractere inválido no início
+                            const cleanJson = data.replace(/^\s*[\]\[,]\s*/, '');
+                            chartData = JSON.parse(cleanJson);
+                        } catch (e) {
+                            console.error('Erro ao fazer parse dos dados do gráfico:', e);
+                            return;
+                        }
+                    }
+                    
                     // Extrair dados customizados se existirem
                     let traces = [];
                     let layout = {};
                     
-                    if (data.products) {
+                    if (chartData.products) {
                         // Gráfico customizado com produtos específicos
-                        const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
-                        const initialValue = data.initialValue || 100000;
+                        const years = Array.from({ length: (chartData.years || 5) + 1 }, (_, i) => i);
+                        const initialValue = chartData.initialValue || 100000;
                         
-                        Object.entries(data.products).forEach(([name, info]) => {
+                        Object.entries(chartData.products).forEach(([name, info]) => {
                             let yearlyMultiplier;
                             
                             // Usar yearlyMultiplier se disponível, senão calcular
@@ -1266,7 +1300,7 @@
                         });
                         
                         layout = {
-                            title: data.title || 'Comparativo de Investimentos',
+                            title: chartData.title || 'Comparativo de Investimentos',
                             xaxis: { 
                                 title: 'Anos',
                                 gridcolor: 'rgba(255,255,255,0.1)'
