@@ -64,6 +64,58 @@
             flex-direction: column;
             height: 100vh;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                transform: translateX(-100%);
+                width: 85%;
+                z-index: 1000;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .menu-toggle {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                z-index: 1001;
+                background: var(--primary-color);
+                border: none;
+                color: white;
+                padding: 10px;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: left 0.3s ease;
+            }
+
+            .menu-toggle.open {
+                left: calc(85% + 10px);
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
         }
 
         .sidebar-header {
@@ -1039,17 +1091,21 @@
             opacity: 0.7;
         }
 
-        .chart-container {
-            background-color: var(--surface-color);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid var(--border-color);
-        }
-        
-        .chart-container canvas {
-            max-width: 100%;
-        }
+                    .chart-container {
+                background-color: var(--surface-color);
+                border-radius: var(--border-radius);
+                padding: 20px;
+                margin: 20px 0;
+                border: 1px solid var(--border-color);
+            }
+            
+            .chart-wrapper {
+                margin: 20px 0;
+            }
+            
+            .chart-container canvas {
+                max-width: 100%;
+            }
         
         @media (max-width: 768px) {
             .chart-container {
@@ -1075,7 +1131,6 @@
             if (chartMatch) {
                 try {
                     const chartData = JSON.parse(chartMatch[1]);
-                    const chartComponent = React.createElement(Chart, { data: chartData });
                     const textContent = content.replace(/\[GRAFICO_DADOS\][\s\S]*?\[\/GRAFICO_DADOS\]/, '');
                     const textHtml = marked.parse(textContent);
                     
@@ -1087,7 +1142,7 @@
                         React.createElement('div', { 
                             key: 'chart',
                             className: 'chart-container'
-                        }, chartComponent)
+                        }, React.createElement(ChartComponent, { data: chartData }))
                     ]);
                 } catch (e) {
                     console.error('Erro ao processar dados do gráfico:', e);
@@ -1098,25 +1153,42 @@
             return React.createElement('div', { dangerouslySetInnerHTML: { __html: html } });
         };
 
-        // Chart Component
-        const Chart = ({ data }) => {
-            const chartRef = useRef(null);
-            const chartInstance = useRef(null);
+        // Função auxiliar para gerar cores aleatórias
+        const getRandomColor = () => {
+            const colors = [
+                '#2563eb', // Azul
+                '#059669', // Verde
+                '#dc2626', // Vermelho
+                '#d97706', // Laranja
+                '#7c3aed', // Roxo
+                '#db2777', // Rosa
+                '#2dd4bf', // Turquesa
+                '#f59e0b'  // Amarelo
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        };
 
-            useEffect(() => {
-                if (!chartRef.current) return;
+        // Chart Component
+        const ChartComponent = React.memo(function ChartComponent({ data }) {
+            const canvasRef = React.useRef(null);
+            const chartInstanceRef = React.useRef(null);
+
+            React.useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
 
                 // Destruir gráfico anterior se existir
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
+                if (chartInstanceRef.current) {
+                    chartInstanceRef.current.destroy();
                 }
 
                 // Preparar dados para o gráfico
                 const labels = Array.from({ length: data.years * 12 + 1 }, (_, i) => i);
                 const datasets = Object.entries(data.products).map(([name, product]) => {
-                    const monthlyRate = product.rate / 12;
                     const monthlyMultiplier = Math.pow(1 + (product.rate / 100), 1/12);
-                    
                     const values = labels.map(month => {
                         return data.initialValue * Math.pow(monthlyMultiplier, month);
                     });
@@ -1131,8 +1203,7 @@
                 });
 
                 // Criar novo gráfico
-                const ctx = chartRef.current.getContext('2d');
-                chartInstance.current = new Chart(ctx, {
+                const newChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: labels,
@@ -1219,38 +1290,30 @@
                     }
                 });
 
+                chartInstanceRef.current = newChart;
+
                 return () => {
-                    if (chartInstance.current) {
-                        chartInstance.current.destroy();
+                    if (chartInstanceRef.current) {
+                        chartInstanceRef.current.destroy();
                     }
                 };
             }, [data]);
 
-            return React.createElement('canvas', {
-                ref: chartRef,
+            return React.createElement('div', {
+                className: 'chart-wrapper',
                 style: {
                     width: '100%',
                     height: '400px',
-                    marginTop: '20px',
-                    marginBottom: '20px'
+                    position: 'relative'
                 }
-            });
-        };
-
-        // Função auxiliar para gerar cores aleatórias
-        const getRandomColor = () => {
-            const colors = [
-                '#2563eb', // Azul
-                '#059669', // Verde
-                '#dc2626', // Vermelho
-                '#d97706', // Laranja
-                '#7c3aed', // Roxo
-                '#db2777', // Rosa
-                '#2dd4bf', // Turquesa
-                '#f59e0b'  // Amarelo
-            ];
-            return colors[Math.floor(Math.random() * colors.length)];
-        };
+            }, React.createElement('canvas', {
+                ref: canvasRef,
+                style: {
+                    width: '100%',
+                    height: '100%'
+                }
+            }));
+        });
 
         // API Functions
         const api = {
@@ -1809,405 +1872,379 @@
         };
         
         // App Component
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [userName, setUserName] = useState('');
-            const [isAdmin, setIsAdmin] = useState(false);
-            const [chats, setChats] = useState([]);
-            const [activeChat, setActiveChat] = useState(null);
-            const [newMessage, setNewMessage] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [error, setError] = useState(null);
-            const [showAdminPanel, setShowAdminPanel] = useState(false);
-            const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-            const [sidebarOpen, setSidebarOpen] = useState(false);
-            const [attachedFiles, setAttachedFiles] = useState([]);
-            const [showPresentation, setShowPresentation] = useState(false);
-            
-            const messagesEndRef = useRef(null);
-            const fileInputRef = useRef(null);
-            const inputRef = useRef(null);
-            
-            // Cleanup function for resetting state
-            const resetState = () => {
-                setUser(null);
-                setUserName('');
-                setIsAdmin(false);
-                setChats([]);
-                setActiveChat(null);
-                setNewMessage('');
-                setLoading(false);
-                setError(null);
-                setShowAdminPanel(false);
-                setSidebarOpen(false);
-                setAttachedFiles([]);
-                setShowPresentation(false);
+        function App() {
+            const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+            const [username, setUsername] = React.useState('');
+            const [chats, setChats] = React.useState([]);
+            const [currentChat, setCurrentChat] = React.useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+            const messagesEndRef = React.useRef(null);
+            const fileInputRef = React.useRef(null);
+            const [messages, setMessages] = React.useState([]);
+            const [newMessage, setNewMessage] = React.useState('');
+            const [isLoading, setIsLoading] = React.useState(false);
+            const [error, setError] = React.useState(null);
+            const [selectedFiles, setSelectedFiles] = React.useState([]);
+
+            // Scroll to bottom of messages
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
             };
-            
-            // Error handling function
-            const handleError = (error, context) => {
-                console.error(`Erro em ${context}:`, error);
-                setError(error.message || 'Ocorreu um erro inesperado');
-                setTimeout(() => setError(null), 5000);
-            };
-            
-            useEffect(() => {
-                const handleResize = () => {
-                    setIsMobile(window.innerWidth <= 768);
-                };
-                
-                window.addEventListener('resize', handleResize);
-                return () => window.removeEventListener('resize', handleResize);
-            }, []);
-            
-            useEffect(() => {
-                if (messagesEndRef.current) {
-                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-                }
-            }, [chats, activeChat]);
-            
-            useEffect(() => {
-                if (user) {
+
+            React.useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            // Load chats on login
+            React.useEffect(() => {
+                if (isLoggedIn && username) {
                     loadChats();
                 }
-            }, [user]);
-            
+            }, [isLoggedIn, username]);
+
+            // Toggle sidebar
+            const toggleSidebar = () => {
+                setIsSidebarOpen(!isSidebarOpen);
+            };
+
+            // Load user's chats
             const loadChats = async () => {
-                setLoading(true);
-                setError(null);
-                
                 try {
-                    const loadedChats = await api.getChats(user.username);
-                    setChats(loadedChats);
-                    if (loadedChats.length > 0 && activeChat === null) {
-                        setActiveChat(0);
+                    const userChats = await api.getChats(username);
+                    setChats(userChats);
+                    if (userChats.length > 0 && !currentChat) {
+                        setCurrentChat(userChats[0]);
+                        setMessages(userChats[0].messages || []);
                     }
-                } catch (err) {
-                    handleError(err, 'loadChats');
-                } finally {
-                    setLoading(false);
+                } catch (error) {
+                    console.error('Erro ao carregar chats:', error);
+                    setError('Não foi possível carregar os chats. Por favor, tente novamente.');
                 }
             };
-            
-            const handleLogin = (username, isAdmin, name) => {
-                try {
-                    setUser({ username, role: isAdmin ? 'admin' : 'user', name });
-                    setIsAdmin(isAdmin);
-                    setUserName(name);
-                } catch (err) {
-                    handleError(err, 'handleLogin');
-                    resetState();
-                }
-            };
-            
-            const handleLogout = () => {
-                resetState();
-            };
-            
+
+            // Create new chat
             const handleNewChat = async () => {
-                setLoading(true);
-                setError(null);
-                
                 try {
-                    const result = await api.createChat(user.username);
-                    await loadChats();
-                    setActiveChat(0);
-                    setSidebarOpen(false);
-                } catch (err) {
-                    handleError(err, 'handleNewChat');
-                } finally {
-                    setLoading(false);
+                    const newChat = await api.createChat(username);
+                    setChats([newChat, ...chats]);
+                    setCurrentChat(newChat);
+                    setMessages([]);
+                    setIsSidebarOpen(false); // Fechar sidebar no mobile após criar chat
+                } catch (error) {
+                    console.error('Erro ao criar novo chat:', error);
+                    setError('Não foi possível criar um novo chat. Por favor, tente novamente.');
                 }
             };
-            
-            const handleDeleteChat = async (index, e) => {
-                e.stopPropagation();
-                if (!confirm('Deletar conversa?')) return;
-                
-                setLoading(true);
-                setError(null);
-                
+
+            // Delete chat
+            const handleDeleteChat = async (chatId) => {
                 try {
-                    const chatId = chats[index].id;
-                    await api.deleteChat(user.username, chatId);
-                    await loadChats();
-                    
-                    if (activeChat === index) {
-                        setActiveChat(chats.length > 1 ? 0 : null);
+                    await api.deleteChat(username, chatId);
+                    const updatedChats = chats.filter(chat => chat.id !== chatId);
+                    setChats(updatedChats);
+                    if (currentChat?.id === chatId) {
+                        setCurrentChat(updatedChats[0] || null);
+                        setMessages(updatedChats[0]?.messages || []);
                     }
-                } catch (err) {
-                    handleError(err, 'handleDeleteChat');
-                } finally {
-                    setLoading(false);
+                } catch (error) {
+                    console.error('Erro ao deletar chat:', error);
+                    setError('Não foi possível deletar o chat. Por favor, tente novamente.');
                 }
             };
-            
-            const handleSendMessage = async () => {
-                if (!newMessage.trim() && attachedFiles.length === 0) return;
-                if (!user || activeChat === null || loading) return;
-                
-                const currentMessage = newMessage;
-                const currentFiles = attachedFiles;
-                const chatId = chats[activeChat].id;
-                
-                setNewMessage('');
-                setAttachedFiles([]);
-                setLoading(true);
+
+            // Select chat
+            const handleSelectChat = (chat) => {
+                setCurrentChat(chat);
+                setMessages(chat.messages || []);
                 setError(null);
-                
+                setIsSidebarOpen(false); // Fechar sidebar no mobile após selecionar chat
+            };
+
+            // Send message
+            const handleSendMessage = async () => {
+                if (!newMessage.trim() && selectedFiles.length === 0) return;
+
+                setIsLoading(true);
+                setError(null);
+
                 try {
-                    // Convert files to base64
-                    const filesData = await Promise.all(
-                        currentFiles.map(file => {
-                            return new Promise((resolve, reject) => {
-                                const reader = new FileReader();
-                                reader.onload = () => {
-                                    resolve({
-                                        name: file.name,
-                                        type: file.type,
-                                        size: file.size,
-                                        data: reader.result.split(',')[1]
-                                    });
-                                };
-                                reader.onerror = () => reject(new Error(`Erro ao ler arquivo ${file.name}`));
-                                reader.readAsDataURL(file.data);
-                            });
-                        })
+                    // Adicionar mensagem do usuário localmente
+                    const userMessage = {
+                        role: 'user',
+                        content: newMessage
+                    };
+                    setMessages(prev => [...prev, userMessage]);
+                    setNewMessage('');
+
+                    // Enviar mensagem para o servidor
+                    const response = await api.sendMessage(
+                        username,
+                        currentChat.id,
+                        newMessage,
+                        selectedFiles
                     );
-                    
-                    await api.sendMessage(user.username, chatId, currentMessage, filesData);
-                    await loadChats();
-                } catch (err) {
-                    handleError(err, 'handleSendMessage');
-                    // Restore message and files if send fails
-                    setNewMessage(currentMessage);
-                    setAttachedFiles(currentFiles);
+
+                    // Adicionar resposta do assistente
+                    if (response.success) {
+                        const assistantMessage = {
+                            role: 'assistant',
+                            content: response.message
+                        };
+                        setMessages(prev => [...prev, assistantMessage]);
+                    }
+
+                    // Limpar arquivos selecionados
+                    setSelectedFiles([]);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+
+                } catch (error) {
+                    console.error('Erro em handleSendMessage:', error);
+                    setError(error.message || 'Erro ao enviar mensagem');
+                    // Remover última mensagem em caso de erro
+                    setMessages(prev => prev.slice(0, -1));
                 } finally {
-                    setLoading(false);
+                    setIsLoading(false);
                 }
             };
-            
-            const handleFileSelect = (e) => {
-                try {
-                    const files = Array.from(e.target.files);
-                    const newFiles = files.map(file => ({
-                        name: file.name,
-                        size: file.size,
-                        type: file.type,
-                        data: file
-                    }));
-                    setAttachedFiles([...attachedFiles, ...newFiles]);
-                    e.target.value = '';
-                } catch (err) {
-                    handleError(err, 'handleFileSelect');
-                }
+
+            // Handle file selection
+            const handleFileSelect = (event) => {
+                const files = Array.from(event.target.files);
+                setSelectedFiles(files);
             };
-            
-            const removeFile = (index) => {
-                try {
-                    setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
-                } catch (err) {
-                    handleError(err, 'removeFile');
+
+            // Render main content
+            const renderMainContent = () => {
+                if (!isLoggedIn) {
+                    return React.createElement(Login, {
+                        onLogin: (user) => {
+                            setIsLoggedIn(true);
+                            setUsername(user);
+                        }
+                    });
                 }
+
+                return React.createElement('div', { className: 'chat-container' }, [
+                    // Messages container
+                    React.createElement('div', {
+                        key: 'messages',
+                        className: 'messages'
+                    }, [
+                        messages.map((msg, index) =>
+                            React.createElement('div', {
+                                key: index,
+                                className: `message ${msg.role}`
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: `avatar ${msg.role}-avatar`
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, msg.role === 'user' ? 'Você' : 'Assistente'),
+                                    renderMessage(msg.content)
+                                ])
+                            ])
+                        ),
+                        isLoading &&
+                            React.createElement('div', {
+                                key: 'loading',
+                                className: 'message system'
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: 'avatar system-avatar'
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, 'Sistema'),
+                                    'Processando...'
+                                ])
+                            ]),
+                        error &&
+                            React.createElement('div', {
+                                key: 'error',
+                                className: 'message system error',
+                                onClick: () => setError(null)
+                            }, [
+                                React.createElement('div', {
+                                    key: 'avatar',
+                                    className: 'avatar error-avatar'
+                                }),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'header',
+                                        className: 'message-header'
+                                    }, 'Erro'),
+                                    error
+                                ])
+                            ]),
+                        React.createElement('div', {
+                            key: 'end',
+                            ref: messagesEndRef
+                        })
+                    ]),
+
+                    // Input container
+                    React.createElement('div', {
+                        key: 'input',
+                        className: 'input-container'
+                    }, [
+                        React.createElement('textarea', {
+                            key: 'textarea',
+                            value: newMessage,
+                            onChange: (e) => setNewMessage(e.target.value),
+                            onKeyPress: (e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                }
+                            },
+                            placeholder: 'Digite sua mensagem...',
+                            disabled: isLoading
+                        }),
+                        React.createElement('input', {
+                            key: 'file',
+                            type: 'file',
+                            ref: fileInputRef,
+                            onChange: handleFileSelect,
+                            accept: '.pdf',
+                            style: { display: 'none' }
+                        }),
+                        React.createElement('div', {
+                            key: 'buttons',
+                            className: 'button-container'
+                        }, [
+                            React.createElement('button', {
+                                key: 'attach',
+                                onClick: () => fileInputRef.current?.click(),
+                                disabled: isLoading,
+                                className: 'attach-button'
+                            }, '📎'),
+                            React.createElement('button', {
+                                key: 'send',
+                                onClick: handleSendMessage,
+                                disabled: isLoading || (!newMessage.trim() && selectedFiles.length === 0)
+                            }, '➤')
+                        ])
+                    ])
+                ]);
             };
-            
-            if (!user) {
-                return <Login onLogin={handleLogin} />;
-            }
-            
-            const currentChat = activeChat !== null ? chats[activeChat] : null;
-            
-            return (
-                <div className="app">
-                    {error && (
-                        <div className="error-toast">
-                            {error}
-                        </div>
-                    )}
-                    
-                    {isMobile && (
-                        <button 
-                            className="menu-toggle"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                        >
-                            ☰
-                        </button>
-                    )}
-                    <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-                        <div className="sidebar-header">
-                            <h1 className="sidebar-logo">Horizont IA</h1>
-                            <div className="user-info">
-                                <span>{user && (user.name || user.username)}</span>
-                                <div className="user-actions">
-                                    {user && user.role === 'admin' && (
-                                        <button 
-                                            className="admin-btn"
-                                            onClick={() => setShowAdminPanel(!showAdminPanel)}
-                                        >
-                                            👑 Painel Admin
-                                        </button>
-                                    )}
-                                    <button 
-                                        className="logout-btn"
-                                        onClick={handleLogout}
-                                    >
-                                        🚪 Sair
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button className="new-chat-btn" onClick={handleNewChat}>
-                            ➕ Nova Conversa
-                        </button>
-                        
-                        <div className="chat-list">
-                            {chats.map((chat, index) => (
-                                <div
-                                    key={chat.id}
-                                    className={`chat-item ${activeChat === index ? 'active' : ''}`}
-                                    onClick={() => {
-                                        setActiveChat(index);
-                                        setSidebarOpen(false);
-                                    }}
-                                >
-                                    <span className="chat-item-title">{chat.title}</span>
-                                    <button 
-                                        className="delete-chat-btn"
-                                        onClick={(e) => handleDeleteChat(index, e)}
-                                    >
-                                        🗑️
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    
-                    {/* Main Content */}
-                    <div className="main-content">
-                        {showAdminPanel ? (
-                            <AdminPanel onClose={() => setShowAdminPanel(false)} />
-                        ) : (
-                            <React.Fragment>
-                                {currentChat ? (
-                                    <React.Fragment>
-                                        {/* Messages */}
-                                        <div className="messages-container">
-                                            {currentChat.messages.map((msg, index) => (
-                                                <div key={index} className={`message ${msg.role}`}>
-                                                    <div className="message-header">
-                                                        <div className={msg.role === 'user' ? 'user-avatar' : 'assistant-avatar'}>
-                                                            {msg.role === 'user' ? '👤' : '🎯'}
-                                                        </div>
-                                                        <span className="message-role">
-                                                            {msg.role === 'user' ? 'Você' : 'Consultor Horizont'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="message-content">
-                                                        {msg.files && msg.files.length > 0 && (
-                                                            <div className="files-container">
-                                                                {msg.files.map((file, i) => (
-                                                                    <div key={i} className="file-preview">
-                                                                        <div className="file-icon">
-                                                                            {file.type && file.type.includes('pdf') ? '📄' : '📎'}
-                                                                        </div>
-                                                                        <div className="file-info">
-                                                                            <div className="file-name">{file.name}</div>
-                                                                            <div className="file-size">{formatFileSize(file.size)}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                        {renderMessage(msg.content)}
-                                                        {msg.chart && <Chart data={msg.chart} />}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            <div ref={messagesEndRef} />
-                                        </div>
-                                        
-                                        {/* Input Area */}
-                                        <div className="input-area">
-                                            {attachedFiles.length > 0 && (
-                                                <div className="attached-files">
-                                                    {attachedFiles.map((file, index) => (
-                                                        <div key={index} className="file-preview">
-                                                            <div className="file-icon">
-                                                                {file.type && file.type.includes('pdf') ? '📄' : '📎'}
-                                                            </div>
-                                                            <div className="file-info">
-                                                                <div className="file-name">{file.name}</div>
-                                                                <div className="file-size">{formatFileSize(file.size)}</div>
-                                                            </div>
-                                                            <button 
-                                                                className="remove-file-btn"
-                                                                onClick={() => removeFile(index)}
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div className="input-container">
-                                                <textarea
-                                                    className="message-input"
-                                                    value={newMessage}
-                                                    onChange={(e) => setNewMessage(e.target.value)}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                                            e.preventDefault();
-                                                            handleSendMessage();
-                                                        }
-                                                    }}
-                                                    placeholder="Digite sua mensagem..."
-                                                    disabled={loading}
-                                                />
-                                                <div className="input-actions">
-                                                    <label className="attach-btn">
-                                                        📎
-                                                        <input
-                                                            type="file"
-                                                            onChange={handleFileSelect}
-                                                            multiple
-                                                            accept=".pdf,.doc,.docx,.xls,.xlsx"
-                                                            style={{ display: 'none' }}
-                                                        />
-                                                    </label>
-                                                    <button 
-                                                        className="send-btn"
-                                                        onClick={handleSendMessage}
-                                                        disabled={!newMessage.trim() && attachedFiles.length === 0 || loading}
-                                                    >
-                                                        {loading ? '⏳' : '➤'}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </React.Fragment>
-                                ) : (
-                                    <div className="empty-state">
-                                        <div className="empty-state-content">
-                                            <h2>👋 Bem-vindo ao Horizont IA</h2>
-                                            <p>Clique em "Nova Conversa" para começar</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </React.Fragment>
-                        )}
-                    </div>
-                    
-                    {/* Presentation Modal */}
-                    <PresentationModal
-                        isOpen={showPresentation}
-                        onClose={() => setShowPresentation(false)}
-                        chatData={currentChat}
-                        username={user}
-                    />
-                </div>
-            );
-        };
+
+            // Render sidebar content
+            const renderSidebar = () => {
+                return [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'sidebar-header'
+                    }, [
+                        React.createElement('div', {
+                            key: 'logo',
+                            className: 'sidebar-logo'
+                        }, '💼 Horizont IA'),
+                        React.createElement('div', {
+                            key: 'user',
+                            className: 'user-info'
+                        }, [
+                            `Bem-vindo, ${username}!`,
+                            React.createElement('div', {
+                                key: 'actions',
+                                className: 'user-actions'
+                            }, [
+                                username === 'admin' &&
+                                    React.createElement('button', {
+                                        key: 'admin',
+                                        className: 'admin-btn',
+                                        onClick: () => window.location.href = '/admin'
+                                    }, '⚙️ Admin'),
+                                React.createElement('button', {
+                                    key: 'logout',
+                                    className: 'logout-btn',
+                                    onClick: () => {
+                                        setIsLoggedIn(false);
+                                        setUsername('');
+                                        setChats([]);
+                                        setCurrentChat(null);
+                                        setMessages([]);
+                                    }
+                                }, '🚪 Sair')
+                            ])
+                        ])
+                    ]),
+                    React.createElement('button', {
+                        key: 'new-chat',
+                        className: 'new-chat-btn',
+                        onClick: handleNewChat
+                    }, '+ Nova Conversa'),
+                    React.createElement('div', {
+                        key: 'list',
+                        className: 'chat-list'
+                    }, chats.map(chat =>
+                        React.createElement('div', {
+                            key: chat.id,
+                            className: `chat-item ${currentChat?.id === chat.id ? 'active' : ''}`,
+                            onClick: () => handleSelectChat(chat)
+                        }, [
+                            React.createElement('span', {
+                                key: 'title',
+                                className: 'chat-item-title'
+                            }, chat.title || 'Nova Conversa'),
+                            React.createElement('button', {
+                                key: 'delete',
+                                className: 'delete-chat-btn',
+                                onClick: (e) => {
+                                    e.stopPropagation();
+                                    handleDeleteChat(chat.id);
+                                }
+                            }, '🗑️')
+                        ])
+                    ))
+                ];
+            };
+
+            return React.createElement('div', { className: 'app' }, [
+                // Menu toggle button for mobile
+                React.createElement('button', {
+                    key: 'menu-toggle',
+                    className: `menu-toggle ${isSidebarOpen ? 'open' : ''}`,
+                    onClick: toggleSidebar
+                }, '☰'),
+                
+                // Sidebar overlay
+                React.createElement('div', {
+                    key: 'sidebar-overlay',
+                    className: `sidebar-overlay ${isSidebarOpen ? 'show' : ''}`,
+                    onClick: () => setIsSidebarOpen(false)
+                }),
+                
+                // Sidebar
+                React.createElement('div', {
+                    key: 'sidebar',
+                    className: `sidebar ${isSidebarOpen ? 'open' : ''}`
+                }, renderSidebar()),
+                
+                // Main content
+                React.createElement('div', {
+                    key: 'main',
+                    className: 'main'
+                }, renderMainContent())
+            ]);
+        }
         
         // Render App
         ReactDOM.render(<App />, document.getElementById('root'));
