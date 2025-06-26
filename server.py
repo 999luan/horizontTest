@@ -234,7 +234,7 @@ def send_message():
             try:
                 logger.info("Tentando fazer chamada com client configurado...")
                 response = client.messages.create(
-                    model="claude-3-opus-20240229",
+                    model="claude-3-haiku-20240307",
                     max_tokens=4096,
                     messages=messages_for_claude
                 )
