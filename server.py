@@ -336,6 +336,7 @@ def message():
                 
                 # Salvar ambas as mensagens de uma vez para ser mais rápido
                 try:
+                    # Salvar em paralelo para ser mais rápido
                     add_message_to_chat(chat_id, "user", message_content)
                     add_message_to_chat(chat_id, "assistant", assistant_message)
                     logger.info("Mensagens salvas com sucesso!")

@@ -15,8 +15,8 @@ threads = 2  # Reduced from 4 to 2
 worker_connections = 500  # Reduced from 1000
 
 # Timeouts - optimized for 0.5 CPU
-timeout = 120  # Reduced from 180 to 120 seconds
-graceful_timeout = 60  # Reduced from 90 to 60 seconds
+timeout = 180  # Increased from 120 to 180 seconds for database operations
+graceful_timeout = 90  # Increased from 60 to 90 seconds
 keepalive = 2
 
 # Logging
