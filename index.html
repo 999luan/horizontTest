@@ -1350,7 +1350,7 @@
                     const textContent = content.replace(/\[GRAFICO_DADOS\][\s\S]*?\[\/GRAFICO_DADOS\]/, '');
                     const textHtml = marked.parse(textContent);
                     
-                    return React.createElement('div', null, [
+                    return React.createElement('div', { key: 'message-content' }, [
                         React.createElement('div', { 
                             key: 'text',
                             dangerouslySetInnerHTML: { __html: textHtml }
