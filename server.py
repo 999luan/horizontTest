@@ -174,17 +174,17 @@ def process_claude_message(messages, max_retries=1):
             # Verificar tamanho total das mensagens e limitar para 0.5 CPU
             total_tokens = sum(len(msg["content"].split()) for msg in messages) * 2  # Estimativa aproximada
             
-            # Ajustar max_tokens com base no tamanho da entrada (otimizado para 0.5 CPU)
-            max_tokens = min(4096, max(1024, total_tokens))  # Aumentado para 4096 max
+            # Ajustar max_tokens com base no tamanho da entrada (otimizado para 512MB RAM)
+            max_tokens = min(2048, max(512, total_tokens))  # Reduzido drasticamente para 2048 max
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
-            timeout = 90.0  # Timeout padrão
+            timeout = 60.0  # Reduzido para 60s
             
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
-                max_tokens = 3072  # Aumentado para 3072 para gráficos completos
-                timeout = 180.0  # Timeout mais longo para gráficos complexos
+                max_tokens = 1536  # Reduzido drasticamente para 1536 para gráficos
+                timeout = 90.0  # Reduzido para 90s para gráficos
                 logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s")
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
@@ -318,7 +318,7 @@ def message():
             # Só incluir mensagens se não for um reset de contexto
             if chat_messages and len(chat_messages) > 0:
                 # Limitar o número de mensagens para evitar timeouts
-                max_messages = 10  # Máximo de 10 mensagens anteriores
+                max_messages = 5  # Reduzido drasticamente de 10 para 5 mensagens
                 if len(chat_messages) > max_messages:
                     # Pegar apenas as últimas mensagens
                     chat_messages = chat_messages[-max_messages:]

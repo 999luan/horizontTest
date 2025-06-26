@@ -8,16 +8,16 @@ import threading
 bind = "0.0.0.0:10000"
 backlog = 1024  # Reduced from 2048
 
-# Worker processes - optimized for 0.5 CPU Render plan
-workers = 1  # Reduced from 3 to 1 for 0.5 CPU
+# Worker processes - optimized for 0.5 CPU and 512MB RAM
+workers = 1  # Apenas 1 worker para economizar memória
 worker_class = 'sync'
-threads = 2  # Reduced from 4 to 2
-worker_connections = 500  # Reduced from 1000
+threads = 1  # Reduzido para 1 thread
+worker_connections = 100  # Reduzido drasticamente
 
-# Timeouts - optimized for 0.5 CPU
-timeout = 300  # Increased from 180 to 300 seconds for complex chart generation
-graceful_timeout = 120  # Increased from 90 to 120 seconds
-keepalive = 2
+# Timeouts - optimized for 0.5 CPU and 512MB RAM
+timeout = 120  # Reduzido para 120s para evitar uso excessivo de memória
+graceful_timeout = 60  # Reduzido para 60s
+keepalive = 1  # Reduzido para 1
 
 # Logging
 accesslog = '-'
@@ -44,9 +44,9 @@ certfile = None
 capture_output = True
 enable_stdio_inheritance = True
 
-# Memory management - optimized for 0.5 CPU
-max_requests = 50  # Reduced from 100
-max_requests_jitter = 5  # Reduced from 10
+# Memory management - optimized for 512MB RAM
+max_requests = 10  # Reduzido drasticamente para liberar memória frequentemente
+max_requests_jitter = 2  # Reduzido para 2
 worker_tmp_dir = "/tmp"
 
 # Prevent workers from hanging
