@@ -68,7 +68,7 @@ def get_all_users():
         cursor.execute("""
             SELECT id, username, role, created_at, last_login, is_active
             FROM users
-            WHERE username != 'admin'
+            WHERE username != 'admin' AND is_active = TRUE
             ORDER BY created_at DESC
         """)
         return cursor.fetchall()
