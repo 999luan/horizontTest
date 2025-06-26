@@ -8,7 +8,23 @@
     <!-- React e Babel -->
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+    
+    <script>
+        // Configuração do Babel para suportar recursos modernos
+        Babel.registerPreset("custom", {
+            presets: [
+                [Babel.availablePresets["env"]],
+                [Babel.availablePresets["react"]]
+            ],
+            plugins: [
+                [Babel.availablePlugins["proposal-optional-chaining"]],
+                [Babel.availablePlugins["proposal-nullish-coalescing-operator"]],
+                [Babel.availablePlugins["proposal-class-properties"]],
+                [Babel.availablePlugins["proposal-object-rest-spread"]]
+            ]
+        });
+    </script>
     
     <!-- Outras dependências -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -1165,7 +1181,7 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel">
+    <script type="text/babel" data-preset="custom">
         const useState = React.useState;
         const useEffect = React.useEffect;
         const useRef = React.useRef;
@@ -2341,24 +2357,24 @@
                 className: 'app' + (!isLoggedIn ? ' login-mode' : '')
             }, [
                 // Menu toggle button for mobile - only show if logged in
-                isLoggedIn ? React.createElement('button', {
+                isLoggedIn && React.createElement('button', {
                     key: 'menu-toggle',
                     className: 'menu-toggle visible',
                     onClick: toggleSidebar
-                }, '☰') : null,
+                }, '☰'),
                 
                 // Sidebar overlay - only show if logged in
-                isLoggedIn ? React.createElement('div', {
+                isLoggedIn && React.createElement('div', {
                     key: 'sidebar-overlay',
                     className: 'sidebar-overlay' + (isSidebarOpen ? ' show' : ''),
                     onClick: () => setIsSidebarOpen(false)
-                }) : null,
+                }),
                 
                 // Sidebar - only show if logged in
-                isLoggedIn ? React.createElement('div', {
+                isLoggedIn && React.createElement('div', {
                     key: 'sidebar',
                     className: 'sidebar' + (isSidebarOpen ? ' open' : '')
-                }, renderSidebar()) : null,
+                }, renderSidebar()),
                 
                 // Main content
                 React.createElement('div', {
@@ -2369,7 +2385,10 @@
         }
         
         // Render App
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.render(
+            React.createElement(App),
+            document.getElementById('root')
+        );
     </script>
 </body>
 </html>
