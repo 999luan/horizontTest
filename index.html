@@ -2111,9 +2111,11 @@
 
             // Login handler
             const handleLogin = async (user, isAdminUser, name) => {
+                console.log('Login handler chamado:', { user, isAdminUser, name });
                 setIsLoggedIn(true);
                 setUsername(user);
                 setIsAdmin(isAdminUser);
+                console.log('Estado atualizado - isAdmin:', isAdminUser);
             };
 
             // Scroll to bottom of messages

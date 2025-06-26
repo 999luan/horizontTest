@@ -193,6 +193,8 @@ def process_claude_message(messages, max_retries=2):
         try:
             # Obter o prompt do sistema
             system_prompt = get_prompt()
+            logger.info(f"Prompt carregado: {system_prompt[:100] if system_prompt else 'NENHUM PROMPT ENCONTRADO'}...")
+            
             if not system_prompt:
                 logger.warning("Nenhum prompt do sistema encontrado, usando prompt padrão")
                 system_prompt = "Você é um assistente especializado em investimentos da Horizont Investimentos."
@@ -208,6 +210,8 @@ def process_claude_message(messages, max_retries=2):
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
                 max_tokens = 2048  # Limitar tokens para respostas com gráficos
+            
+            logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
             
             response = client.messages.create(
                 model="claude-3-opus-20240229",
