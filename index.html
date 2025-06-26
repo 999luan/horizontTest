@@ -2240,7 +2240,11 @@
                                 React.createElement('button', {
                                     key: 'attach-button',
                                     className: 'button attach-button',
-                                    onClick: () => fileInputRef.current?.click(),
+                                    onClick: () => {
+                                        if (fileInputRef.current) {
+                                            fileInputRef.current.click();
+                                        }
+                                    },
                                     disabled: isLoading || !currentChat
                                 }, '📎'),
                                 React.createElement('button', {
