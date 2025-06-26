@@ -40,9 +40,16 @@ CORS(app)
 # Cliente Anthropic
 api_key = os.getenv('ANTHROPIC_API_KEY')
 if not api_key:
+    logger.error("ANTHROPIC_API_KEY não está configurada!")
     raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
-client = anthropic.Anthropic(api_key=api_key)
+logger.info("Inicializando cliente do Claude...")
+try:
+    client = anthropic.Anthropic(api_key=api_key)
+    logger.info("Cliente do Claude inicializado com sucesso!")
+except Exception as e:
+    logger.error(f"Erro ao inicializar cliente do Claude: {e}")
+    raise
 
 # Configurar banco de dados na inicialização
 logger.info("Configurando banco de dados...")
@@ -215,17 +222,22 @@ def send_message():
                     "content": msg["content"]
                 })
             
+            logger.info(f"Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
+            
             # Faz a chamada para o Claude
+            logger.info("Chamando API do Claude...")
             response = client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=4096,
                 messages=messages_for_claude
             )
+            logger.info("Resposta recebida do Claude")
             
             assistant_message = response.content[0].text
+            logger.info(f"Resposta do Claude processada: {len(assistant_message)} caracteres")
             
         except Exception as e:
-            logger.error(f"Erro na chamada do Claude: {e}")
+            logger.error(f"Erro detalhado na chamada do Claude: {str(e)}")
             return jsonify({"success": False, "message": "Error communicating with Claude"}), 500
         
         # Salva resposta do assistente
@@ -241,7 +253,7 @@ def send_message():
         })
         
     except Exception as e:
-        logger.error(f"Erro ao processar mensagem: {e}")
+        logger.error(f"Erro ao processar mensagem: {str(e)}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
