@@ -213,6 +213,7 @@ def add_message_to_chat(chat_id, role, content):
         cursor = connection.cursor()
         
         # Verificar se o chat existe
+        print("Verificando se o chat existe...")
         cursor.execute("SELECT id FROM chats WHERE id = %s", (chat_id,))
         chat = cursor.fetchone()
         if not chat:
@@ -221,31 +222,65 @@ def add_message_to_chat(chat_id, role, content):
         
         print("Chat encontrado, adicionando mensagem...")
         # Adicionar mensagem ao histórico do chat
-        cursor.execute("""
-            INSERT INTO chat_messages (chat_id, role, content)
-            VALUES (%s, %s, %s)
-        """, (chat_id, role, content))
+        try:
+            cursor.execute("""
+                INSERT INTO chat_messages (chat_id, role, content)
+                VALUES (%s, %s, %s)
+            """, (chat_id, role, content))
+            print("Mensagem inserida com sucesso")
+        except Exception as insert_error:
+            print(f"Erro ao inserir mensagem: {insert_error}")
+            connection.rollback()
+            return False
         
         print("Mensagem adicionada, atualizando timestamp...")
         # Apenas atualizar o timestamp da última mensagem (mais rápido)
-        cursor.execute("""
-            UPDATE chats 
-            SET last_message_at = CURRENT_TIMESTAMP
-            WHERE id = %s
-        """, (chat_id,))
+        try:
+            cursor.execute("""
+                UPDATE chats 
+                SET last_message_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+            """, (chat_id,))
+            print("Timestamp atualizado com sucesso")
+        except Exception as update_error:
+            print(f"Erro ao atualizar timestamp: {update_error}")
+            connection.rollback()
+            return False
         
-        connection.commit()
+        try:
+            connection.commit()
+            print("Commit realizado com sucesso!")
+        except Exception as commit_error:
+            print(f"Erro no commit: {commit_error}")
+            connection.rollback()
+            return False
+            
         print("Mensagem salva com sucesso!")
         return True
     except Error as e:
         print(f"Erro MySQL ao adicionar mensagem: {str(e)}")
+        if connection:
+            try:
+                connection.rollback()
+            except:
+                pass
         return False
     except Exception as e:
         print(f"Erro inesperado ao adicionar mensagem: {str(e)}")
+        if connection:
+            try:
+                connection.rollback()
+            except:
+                pass
         return False
     finally:
-        cursor.close()
-        connection.close()
+        try:
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
+        except Exception as close_error:
+            print(f"Erro ao fechar conexão: {close_error}")
 
 def get_chat_messages(chat_id):
     connection = get_db_connection()

@@ -508,10 +508,24 @@ def after_request(response):
 def handle_exception(e):
     """Handle any uncaught exception"""
     logger.error(f"Erro não tratado: {str(e)}")
+    logger.error(f"Tipo do erro: {type(e).__name__}")
+    import traceback
+    logger.error(f"Traceback completo: {traceback.format_exc()}")
     return jsonify({
         "success": False,
         "message": "Internal server error"
     }), 500
+
+# Adicionar handler para erros específicos do Gunicorn
+import signal
+import sys
+
+def signal_handler(signum, frame):
+    logger.info(f"Recebido sinal {signum}, encerrando graciosamente...")
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
