@@ -76,7 +76,7 @@ try:
     # Test the client with a simple request
     test_response = client.messages.create(
         model="claude-3-opus-20240229",
-        max_tokens_to_sample=10,
+        max_tokens=10,
         messages=[{"role": "user", "content": "Hi"}]
     )
     logger.info("Cliente do Claude testado e funcionando!")
@@ -268,7 +268,7 @@ def send_message():
             try:
                 response = client.messages.create(
                     model="claude-3-opus-20240229",
-                    max_tokens_to_sample=4096,
+                    max_tokens=4096,
                     messages=messages_for_claude,
                     system=str(system_prompt)
                 )
