@@ -1954,9 +1954,7 @@
                 }
             };
             
-            const handleSendMessage = async (e) => {
-                e?.preventDefault();
-                
+            const handleSendMessage = async () => {
                 if (!newMessage.trim() && attachedFiles.length === 0) return;
                 if (!user || activeChat === null || loading) return;
                 
@@ -2172,7 +2170,7 @@
                                                     onKeyDown={(e) => {
                                                         if (e.key === 'Enter' && !e.shiftKey) {
                                                             e.preventDefault();
-                                                            handleSendMessage(e);
+                                                            handleSendMessage();
                                                         }
                                                     }}
                                                     placeholder="Digite sua mensagem..."
@@ -2192,7 +2190,7 @@
                                                     <button 
                                                         className="send-btn"
                                                         onClick={handleSendMessage}
-                                                        disabled={loading || !newMessage.trim()}
+                                                        disabled={!newMessage.trim() && attachedFiles.length === 0 || loading}
                                                     >
                                                         {loading ? '⏳' : '➤'}
                                                     </button>
