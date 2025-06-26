@@ -171,17 +171,17 @@ def process_claude_message(messages, max_retries=1):
                 logger.warning("Nenhum prompt do sistema encontrado, usando prompt padrão")
                 system_prompt = "Você é um assistente especializado em investimentos da Horizont Investimentos."
             
-            # Verificar tamanho total das mensagens
+            # Verificar tamanho total das mensagens e limitar para 0.5 CPU
             total_tokens = sum(len(msg["content"].split()) for msg in messages) * 2  # Estimativa aproximada
             
-            # Ajustar max_tokens com base no tamanho da entrada
-            max_tokens = min(4096, max(1024, total_tokens * 2))  # Entre 1024 e 4096
+            # Ajustar max_tokens com base no tamanho da entrada (otimizado para 0.5 CPU)
+            max_tokens = min(2048, max(512, total_tokens))  # Reduzido para 2048 max
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
-                max_tokens = 2048  # Limitar tokens para respostas com gráficos
+                max_tokens = 1024  # Limitar tokens para respostas com gráficos
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
             logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}")

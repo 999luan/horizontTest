@@ -8,15 +8,15 @@ import threading
 bind = "0.0.0.0:10000"
 backlog = 1024  # Reduced from 2048
 
-# Worker processes - optimized for $7 Render plan
-workers = 3  # Increased from 1 for better performance
+# Worker processes - optimized for 0.5 CPU Render plan
+workers = 1  # Reduced from 3 to 1 for 0.5 CPU
 worker_class = 'sync'
-threads = 4  # Increased from 2
-worker_connections = 1000  # Increased from 500
+threads = 2  # Reduced from 4 to 2
+worker_connections = 500  # Reduced from 1000
 
-# Timeouts
-timeout = 180  # Increased from 120 to 180 seconds for complex Claude API calls
-graceful_timeout = 90  # Increased from 60 to 90 seconds
+# Timeouts - optimized for 0.5 CPU
+timeout = 120  # Reduced from 180 to 120 seconds
+graceful_timeout = 60  # Reduced from 90 to 60 seconds
 keepalive = 2
 
 # Logging
@@ -44,13 +44,13 @@ certfile = None
 capture_output = True
 enable_stdio_inheritance = True
 
-# Memory management - optimized for $7 plan
-max_requests = 100  # Increased from 25
-max_requests_jitter = 10  # Increased from 5
+# Memory management - optimized for 0.5 CPU
+max_requests = 50  # Reduced from 100
+max_requests_jitter = 5  # Reduced from 10
 worker_tmp_dir = "/tmp"
 
 # Prevent workers from hanging
-check_worker_timeout = 60  # Increased from 30
+check_worker_timeout = 30  # Reduced from 60
 
 # SSL
 ssl_version = 'TLSv1_2'
