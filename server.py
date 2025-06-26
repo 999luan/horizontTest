@@ -27,6 +27,8 @@ from database import (
 from setup_db import setup_database
 import time
 import uuid
+import gc  # Adicionar garbage collector
+import mysql.connector
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -200,6 +202,10 @@ def process_claude_message(messages, max_retries=1):
             )
             
             logger.info(f"Resposta recebida do Claude: {len(response.content[0].text) if response and response.content else 0} caracteres")
+            
+            # Limpeza de memória após receber resposta
+            gc.collect()
+            
             return response
             
         except Exception as e:
@@ -207,6 +213,7 @@ def process_claude_message(messages, max_retries=1):
             if attempt == max_retries - 1:
                 raise
             time.sleep(2)  # Espera 2 segundos antes de tentar novamente
+            gc.collect()  # Limpeza de memória entre tentativas
 
 @app.route('/')
 def index():
@@ -367,6 +374,10 @@ def message():
                 "success": False,
                 "message": "O servidor está temporariamente indisponível. Por favor, tente novamente em alguns instantes."
             }), 502
+        finally:
+            # Limpeza de memória após processamento
+            gc.collect()
+            logger.info(f"[{request_id}] Limpeza de memória realizada")
 
     except Exception as e:
         logger.error(f"Erro não tratado: {str(e)}")
