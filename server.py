@@ -190,15 +190,29 @@ def send_message():
         
         # Envia para o Claude
         logger.info("Enviando mensagem para o Claude")
-        response = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=4096,
-            temperature=0.7,
-            system=str(system_prompt),
-            messages=conversation
-        )
-        
-        assistant_message = response.content[0].text
+        try:
+            messages_for_claude = []
+            # Adiciona o prompt do sistema como primeira mensagem do usuário
+            messages_for_claude.append({
+                "role": "user",
+                "content": str(system_prompt)
+            })
+            # Adiciona o resto da conversa
+            messages_for_claude.extend([
+                {"role": msg["role"], "content": msg["content"]}
+                for msg in conversation
+            ])
+            
+            response = client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=4096,
+                messages=messages_for_claude
+            )
+            
+            assistant_message = response.content[0].text
+        except Exception as e:
+            logger.error(f"Erro na chamada do Claude: {e}")
+            return jsonify({"success": False, "message": "Error communicating with Claude"}), 500
         
         # Salva resposta do assistente
         if not add_message_to_chat(chat_id, 'assistant', assistant_message):
