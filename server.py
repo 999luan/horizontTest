@@ -181,12 +181,12 @@ def process_claude_message(messages, max_retries=1):
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
-            timeout = 45.0  # Reduzido para 45s
+            timeout = 45.0  # Reduzido para 45s para evitar worker timeout
             
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
                 max_tokens = 1024  # Aumentado para 1024 para gráficos (era 768)
-                timeout = 90.0  # Aumentado para 90s para gráficos (era 60s)
+                timeout = 45.0  # Reduzido para 45s para gráficos (era 90s)
                 logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s e {max_tokens} tokens")
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
