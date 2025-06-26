@@ -942,17 +942,41 @@
             },
             
             sendMessage: async (username, chatId, message, files = []) => {
-                const response = await fetch(`${API_BASE}/message`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, chatId, message, files })
-                });
-                const data = await response.json();
-                if (!data.success) throw new Error(data.message);
-                return {
-                    response: data.response,
-                    chart_data: data.chart_data
-                };
+                try {
+                    const response = await fetch(`${API_BASE}/message`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, chatId, message, files })
+                    });
+
+                    // Check if response is ok before trying to parse JSON
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Server error:', response.status, errorText);
+                        throw new Error(`Server error: ${response.status} - ${errorText || 'No error details available'}`);
+                    }
+
+                    // Try to parse JSON response
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                        throw new Error('Invalid response from server');
+                    }
+
+                    if (!data.success) {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+
+                    return {
+                        response: data.response,
+                        chart_data: data.chart_data
+                    };
+                } catch (error) {
+                    console.error('API call error:', error);
+                    throw error;
+                }
             },
             
             getUsers: async () => {

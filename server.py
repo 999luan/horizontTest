@@ -24,6 +24,8 @@ from database import (
     update_prompt
 )
 from setup_db import setup_database
+import time
+import uuid
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -238,6 +240,10 @@ def delete_user_chat(username, chat_id):
 
 @app.route('/api/message', methods=['POST'])
 def send_message():
+    start_time = time.time()
+    request_id = str(uuid.uuid4())
+    logger.info(f"[{request_id}] Iniciando processamento de mensagem")
+    
     try:
         data = request.get_json() or {}
         chat_id = data.get('chatId', '')
@@ -245,24 +251,33 @@ def send_message():
         files = data.get('files', [])
         
         if not chat_id or not message:
-            logger.warning("Tentativa de enviar mensagem sem chat_id ou conteúdo")
+            logger.warning(f"[{request_id}] Tentativa de enviar mensagem sem chat_id ou conteúdo")
             return jsonify({"success": False, "message": "chat_id and message are required"}), 400
         
-        logger.info(f"Processando mensagem para chat: {chat_id}")
+        logger.info(f"[{request_id}] Processando mensagem para chat: {chat_id}")
         
         # Adiciona mensagem do usuário
         if not add_message_to_chat(chat_id, 'user', message):
-            logger.error("Falha ao salvar mensagem do usuário")
+            logger.error(f"[{request_id}] Falha ao salvar mensagem do usuário")
             return jsonify({"success": False, "message": "Failed to save user message"}), 500
         
         # Obtém o prompt do banco de dados
         system_prompt = get_prompt()
         if not system_prompt:
-            logger.error("Nenhum prompt configurado")
+            logger.error(f"[{request_id}] Nenhum prompt configurado")
             return jsonify({"success": False, "message": "No prompt configured"}), 500
         
         # Obtém histórico de mensagens
         messages = get_chat_messages(chat_id)
+        if messages is None:
+            logger.error(f"[{request_id}] Falha ao obter histórico de mensagens")
+            return jsonify({"success": False, "message": "Failed to get message history"}), 500
+            
+        # Check timeout
+        if time.time() - start_time > 90:  # 90 seconds timeout
+            logger.error(f"[{request_id}] Timeout ao processar mensagem")
+            return jsonify({"success": False, "message": "Request timeout"}), 504
+            
         conversation = []
         for msg in messages:
             if isinstance(msg, dict):
@@ -272,8 +287,13 @@ def send_message():
                 })
         
         # Envia para o Claude
-        logger.info("Enviando mensagem para o Claude")
+        logger.info(f"[{request_id}] Enviando mensagem para o Claude")
         try:
+            # Check timeout again before calling Claude
+            if time.time() - start_time > 90:
+                logger.error(f"[{request_id}] Timeout antes de chamar Claude")
+                return jsonify({"success": False, "message": "Request timeout"}), 504
+            
             # Prepara as mensagens para o Claude
             messages_for_claude = []
             
@@ -292,39 +312,52 @@ def send_message():
                     "content": content
                 })
             
-            logger.info(f"Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
+            logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
             
             try:
+                # Set a timeout for Claude API call
                 response = client.messages.create(
                     model="claude-3-opus-20240229",
                     max_tokens=4096,
                     messages=messages_for_claude,
-                    system=str(system_prompt)
+                    system=str(system_prompt),
+                    timeout=60  # 60 seconds timeout for Claude API
                 )
-                logger.info("Resposta recebida do Claude")
+                logger.info(f"[{request_id}] Resposta recebida do Claude")
+                
+                # Check timeout after Claude response
+                if time.time() - start_time > 90:
+                    logger.error(f"[{request_id}] Timeout após resposta do Claude")
+                    return jsonify({"success": False, "message": "Request timeout"}), 504
                 
                 # Extract text from response
                 if not response:
-                    logger.error("Resposta do Claude está vazia")
-                    raise ValueError("Empty response from Claude")
+                    logger.error(f"[{request_id}] Resposta do Claude está vazia")
+                    return jsonify({"success": False, "message": "Empty response from Claude"}), 500
                     
                 if not hasattr(response, 'content'):
-                    logger.error("Resposta do Claude não contém conteúdo")
-                    raise ValueError("Response from Claude has no content")
+                    logger.error(f"[{request_id}] Resposta do Claude não contém conteúdo")
+                    return jsonify({"success": False, "message": "Response from Claude has no content"}), 500
                     
                 # For Claude-3, content is a list of content blocks
                 content = response.content
-                logger.info(f"Tipo do conteúdo da resposta: {type(content)}")
-                logger.info(f"Conteúdo da resposta: {content}")
+                logger.info(f"[{request_id}] Tipo do conteúdo da resposta: {type(content)}")
                 
                 if not isinstance(content, list):
-                    logger.error("Conteúdo da resposta do Claude não é uma lista")
-                    raise ValueError("Claude response content is not a list")
+                    logger.error(f"[{request_id}] Conteúdo da resposta do Claude não é uma lista")
+                    return jsonify({"success": False, "message": "Invalid response format from Claude"}), 500
                     
                 # Combine all text blocks
                 response_text = ""
+                chart_data = None
+                
                 for block in content:
-                    logger.info(f"Processando bloco: {block}")
+                    # Check timeout during response processing
+                    if time.time() - start_time > 90:
+                        logger.error(f"[{request_id}] Timeout durante processamento da resposta")
+                        return jsonify({"success": False, "message": "Request timeout"}), 504
+                        
+                    logger.info(f"[{request_id}] Processando bloco: {block}")
                     # Extract text from the block's string representation
                     block_str = str(block)
                     if 'text=' in block_str:
@@ -342,32 +375,29 @@ def send_message():
                             try:
                                 chart_data = parse_chart_from_response(text)
                                 if chart_data:
-                                    logger.info("Dados do gráfico encontrados no bloco")
+                                    logger.info(f"[{request_id}] Dados do gráfico encontrados no bloco")
                                     break  # Found chart data, no need to continue parsing
                             except Exception as e:
-                                logger.error(f"Erro ao processar dados do gráfico no bloco: {e}")
+                                logger.error(f"[{request_id}] Erro ao processar dados do gráfico no bloco: {e}")
                                 continue
                         
                 if not response_text:
-                    logger.error("Texto da resposta do Claude está vazio")
-                    raise ValueError("Empty text in Claude response")
+                    logger.error(f"[{request_id}] Texto da resposta do Claude está vazio")
+                    return jsonify({"success": False, "message": "Empty text in Claude response"}), 500
                     
-                logger.info(f"Resposta do Claude processada: {len(response_text)} caracteres")
+                logger.info(f"[{request_id}] Resposta do Claude processada: {len(response_text)} caracteres")
+                
+                # Check timeout before saving response
+                if time.time() - start_time > 90:
+                    logger.error(f"[{request_id}] Timeout antes de salvar resposta")
+                    return jsonify({"success": False, "message": "Request timeout"}), 504
                 
                 # Salva resposta do assistente
                 if not add_message_to_chat(chat_id, 'assistant', response_text):
-                    logger.error("Falha ao salvar resposta do assistente")
+                    logger.error(f"[{request_id}] Falha ao salvar resposta do assistente")
                     return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
                 
-                logger.info("Mensagem processada com sucesso")
-                
-                # Parse chart data with better error handling
-                chart_data = None
-                try:
-                    chart_data = parse_chart_from_response(response_text)
-                except Exception as e:
-                    logger.error(f"Erro ao processar dados do gráfico: {e}")
-                    # Continue without chart data
+                logger.info(f"[{request_id}] Mensagem processada com sucesso em {time.time() - start_time:.2f} segundos")
                 
                 return jsonify({
                     "success": True,
@@ -377,22 +407,22 @@ def send_message():
                     
             except anthropic.AuthenticationError as e:
                 error_msg = str(e)
-                logger.error(f"Erro de autenticação na API do Claude: {error_msg}")
-                return jsonify({"success": False, "message": "Authentication error with Claude API. Please check your API key."}), 401
+                logger.error(f"[{request_id}] Erro de autenticação na API do Claude: {error_msg}")
+                return jsonify({"success": False, "message": "Authentication error with Claude API"}), 401
             except anthropic.APIError as e:
                 error_msg = str(e)
-                logger.error(f"Erro na API do Claude: {error_msg}")
+                logger.error(f"[{request_id}] Erro na API do Claude: {error_msg}")
                 return jsonify({"success": False, "message": f"Claude API error: {error_msg}"}), 500
             except Exception as e:
-                logger.error(f"Erro inesperado na chamada do Claude: {str(e)}")
+                logger.error(f"[{request_id}] Erro inesperado na chamada do Claude: {str(e)}")
                 return jsonify({"success": False, "message": "Unexpected error communicating with Claude"}), 500
             
         except Exception as e:
-            logger.error(f"Erro ao processar mensagem: {str(e)}")
+            logger.error(f"[{request_id}] Erro ao processar mensagem: {str(e)}")
             return jsonify({"success": False, "message": "Error processing message"}), 500
         
     except Exception as e:
-        logger.error(f"Erro ao processar requisição: {str(e)}")
+        logger.error(f"[{request_id}] Erro ao processar requisição: {str(e)}")
         return jsonify({"success": False, "message": "Error processing request"}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
@@ -466,6 +496,50 @@ def update_prompt_config():
     except Exception as e:
         logger.error(f"Erro ao atualizar prompt: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+
+@app.before_request
+def before_request():
+    logger.info(f"Recebendo requisição: {request.method} {request.path}")
+
+@app.after_request
+def after_request(response):
+    """Ensure all responses have proper headers and format"""
+    # Add CORS headers
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    
+    # Log response status
+    logger.info(f"Enviando resposta: {response.status_code}")
+    
+    # For error responses, ensure they have the correct format
+    if response.status_code >= 400 and response.is_json:
+        try:
+            data = response.get_json()
+            if 'success' not in data:
+                new_data = {
+                    'success': False,
+                    'message': data.get('message', 'Unknown error')
+                }
+                response.set_data(json.dumps(new_data))
+        except Exception as e:
+            logger.error(f"Erro ao formatar resposta de erro: {e}")
+            # If we can't parse the JSON, set a generic error response
+            response.set_data(json.dumps({
+                'success': False,
+                'message': 'Internal server error'
+            }))
+    
+    return response
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle any uncaught exception"""
+    logger.error(f"Erro não tratado: {str(e)}")
+    return jsonify({
+        "success": False,
+        "message": "Internal server error"
+    }), 500
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
