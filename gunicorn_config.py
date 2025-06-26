@@ -15,8 +15,8 @@ threads = 2  # Reduced from 4 to 2
 worker_connections = 500  # Reduced from 1000
 
 # Timeouts - optimized for 0.5 CPU
-timeout = 180  # Increased from 120 to 180 seconds for database operations
-graceful_timeout = 90  # Increased from 60 to 90 seconds
+timeout = 300  # Increased from 180 to 300 seconds for complex chart generation
+graceful_timeout = 120  # Increased from 90 to 120 seconds
 keepalive = 2
 
 # Logging

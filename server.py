@@ -179,19 +179,24 @@ def process_claude_message(messages, max_retries=1):
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
+            timeout = 90.0  # Timeout padrão
+            
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
                 max_tokens = 3072  # Aumentado para 3072 para gráficos completos
+                timeout = 180.0  # Timeout mais longo para gráficos complexos
+                logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s")
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
-            logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}")
+            logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}, timeout={timeout}s")
             
             response = client.messages.create(
                 model="claude-3-opus-20240229",
                 max_tokens=max_tokens,
                 messages=messages,
                 system=system_prompt,
-                temperature=temp
+                temperature=temp,
+                timeout=timeout
             )
             
             logger.info(f"Resposta recebida do Claude: {len(response.content[0].text) if response and response.content else 0} caracteres")
@@ -201,7 +206,7 @@ def process_claude_message(messages, max_retries=1):
             logger.error(f"Tentativa {attempt + 1} falhou: {str(e)}")
             if attempt == max_retries - 1:
                 raise
-            time.sleep(1)  # Espera 1 segundo antes de tentar novamente
+            time.sleep(2)  # Espera 2 segundos antes de tentar novamente
 
 @app.route('/')
 def index():
@@ -312,6 +317,13 @@ def message():
             chat_messages = get_chat_messages(chat_id)
             # Só incluir mensagens se não for um reset de contexto
             if chat_messages and len(chat_messages) > 0:
+                # Limitar o número de mensagens para evitar timeouts
+                max_messages = 10  # Máximo de 10 mensagens anteriores
+                if len(chat_messages) > max_messages:
+                    # Pegar apenas as últimas mensagens
+                    chat_messages = chat_messages[-max_messages:]
+                    logger.info(f"[{request_id}] Limitando contexto a {max_messages} mensagens (de {len(chat_messages) + max_messages} total)")
+                
                 messages = [{"role": msg["role"], "content": msg["content"]} for msg in chat_messages]
         
         # Adicionar nova mensagem
