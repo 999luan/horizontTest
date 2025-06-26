@@ -76,7 +76,7 @@ try:
     # Test the client with a simple request
     test_response = client.messages.create(
         model="claude-3-opus-20240229",
-        max_tokens=10,
+        max_tokens_to_sample=10,
         messages=[{"role": "user", "content": "Hi"}]
     )
     logger.info("Cliente do Claude testado e funcionando!")
@@ -268,7 +268,7 @@ def send_message():
             try:
                 response = client.messages.create(
                     model="claude-3-opus-20240229",
-                    max_tokens=4096,
+                    max_tokens_to_sample=4096,
                     messages=messages_for_claude,
                     system=str(system_prompt)
                 )
@@ -285,6 +285,9 @@ def send_message():
                     
                 # For Claude-3, content is a list of content blocks
                 content = response.content
+                logger.info(f"Tipo do conteúdo da resposta: {type(content)}")
+                logger.info(f"Conteúdo da resposta: {content}")
+                
                 if not isinstance(content, list):
                     logger.error("Conteúdo da resposta do Claude não é uma lista")
                     raise ValueError("Claude response content is not a list")
@@ -292,6 +295,7 @@ def send_message():
                 # Combine all text blocks
                 response_text = ""
                 for block in content:
+                    logger.info(f"Processando bloco: {block}")
                     if isinstance(block, dict) and block.get('type') == 'text':
                         response_text += block.get('text', '')
                         
