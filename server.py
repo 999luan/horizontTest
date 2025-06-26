@@ -308,7 +308,8 @@ def update_prompt_config():
         return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
+    port = int(os.getenv('PORT', 8000))
     print("\n🚀 Servidor Horizont IA iniciado!")
-    print(f"📍 Acesse: http://localhost:8000")
+    print(f"📍 Acesse: http://localhost:{port}")
     print("👤 Login: admin/horizont2025")
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)
