@@ -44,17 +44,48 @@ CORS(app)
 api_key = os.getenv('ANTHROPIC_API_KEY')
 logger.info("Verificando variáveis de ambiente:")
 logger.info(f"ANTHROPIC_API_KEY está definida? {'Sim' if api_key else 'Não'}")
-if api_key:
-    logger.info(f"Comprimento da API key: {len(api_key)}")
-    logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
 
+if not api_key:
+    logger.error("API key não encontrada nas variáveis de ambiente")
+    raise ValueError("ANTHROPIC_API_KEY não está definida")
+
+if not api_key.startswith('sk-ant-'):
+    logger.error("API key inválida: deve começar com 'sk-ant-'")
+    raise ValueError("ANTHROPIC_API_KEY inválida")
+
+# Add more detailed API key validation
+api_key_length = len(api_key)
+logger.info(f"Comprimento da API key: {api_key_length} caracteres")
+logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
+
+# Check for common issues
+if ' ' in api_key:
+    logger.warning("API key contém espaços em branco")
+if '\n' in api_key or '\r' in api_key:
+    logger.warning("API key contém caracteres de nova linha")
+if len(api_key.strip()) != api_key_length:
+    logger.warning("API key contém espaços em branco no início ou fim")
+
+# Initialize client with clean API key
+clean_api_key = api_key.strip()
 logger.info("Inicializando cliente do Claude...")
 try:
-    client = anthropic.Anthropic(api_key=api_key)
-    logger.info("Cliente do Claude inicializado com sucesso!")
+    client = anthropic.Anthropic(
+        api_key=clean_api_key
+    )
+    # Test the client with a simple request
+    test_response = client.messages.create(
+        model="claude-3-opus-20240229",
+        max_tokens=10,
+        messages=[{"role": "user", "content": "Hi"}]
+    )
+    logger.info("Cliente do Claude testado e funcionando!")
+except anthropic.AuthenticationError as e:
+    logger.error(f"Erro de autenticação ao inicializar cliente do Claude: {e}")
+    raise ValueError("Falha na autenticação com a API do Claude. Verifique sua API key.")
 except Exception as e:
     logger.error(f"Erro ao inicializar cliente do Claude: {e}")
-    raise
+    raise ValueError(f"Falha ao inicializar cliente do Claude: {e}")
 
 # Configurar banco de dados na inicialização
 logger.info("Configurando banco de dados...")
@@ -219,65 +250,88 @@ def send_message():
             
             # Adiciona o histórico da conversa
             for msg in conversation:
+                if not isinstance(msg, dict) or 'role' not in msg or 'content' not in msg:
+                    continue
+                    
                 role = "assistant" if msg["role"] == "assistant" else "user"
+                content = msg["content"]
+                if not content:  # Skip empty messages
+                    continue
+                    
                 messages_for_claude.append({
                     "role": role,
-                    "content": [{"type": "text", "text": msg["content"]}]
+                    "content": content
                 })
             
             logger.info(f"Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
             
-            # Faz a chamada para o Claude
-            logger.info("Chamando API do Claude...")
             try:
-                logger.info("Tentando fazer chamada com client configurado...")
-                logger.info("Verificando configuração da API key:")
-                logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
                 response = client.messages.create(
-                    model="claude-3-haiku-20240307",
+                    model="claude-3-opus-20240229",
                     max_tokens=4096,
                     messages=messages_for_claude,
                     system=str(system_prompt)
                 )
                 logger.info("Resposta recebida do Claude")
+                
+                # Extract text from response
+                if not response:
+                    logger.error("Resposta do Claude está vazia")
+                    raise ValueError("Empty response from Claude")
+                    
+                if not hasattr(response, 'content'):
+                    logger.error("Resposta do Claude não contém conteúdo")
+                    raise ValueError("Response from Claude has no content")
+                    
+                # For Claude-3, content is a list of content blocks
+                content = response.content
+                if not isinstance(content, list):
+                    logger.error("Conteúdo da resposta do Claude não é uma lista")
+                    raise ValueError("Claude response content is not a list")
+                    
+                # Combine all text blocks
+                response_text = ""
+                for block in content:
+                    if isinstance(block, dict) and block.get('type') == 'text':
+                        response_text += block.get('text', '')
+                        
+                if not response_text:
+                    logger.error("Texto da resposta do Claude está vazio")
+                    raise ValueError("Empty text in Claude response")
+                    
+                logger.info(f"Resposta do Claude processada: {len(response_text)} caracteres")
+                
+                # Salva resposta do assistente
+                if not add_message_to_chat(chat_id, 'assistant', response_text):
+                    logger.error("Falha ao salvar resposta do assistente")
+                    return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
+                
+                logger.info("Mensagem processada com sucesso")
+                return jsonify({
+                    "success": True,
+                    "response": response_text,
+                    "chart_data": parse_chart_from_response(response_text)
+                })
+                    
+            except anthropic.AuthenticationError as e:
+                error_msg = str(e)
+                logger.error(f"Erro de autenticação na API do Claude: {error_msg}")
+                return jsonify({"success": False, "message": "Authentication error with Claude API. Please check your API key."}), 401
             except anthropic.APIError as e:
-                logger.error(f"Erro na API do Claude: {str(e)}")
-                if hasattr(e, 'status_code'):
-                    logger.error(f"Status code: {e.status_code}")
-                if hasattr(e, 'headers'):
-                    logger.error(f"Headers da resposta: {e.headers}")
-                raise
+                error_msg = str(e)
+                logger.error(f"Erro na API do Claude: {error_msg}")
+                return jsonify({"success": False, "message": f"Claude API error: {error_msg}"}), 500
             except Exception as e:
                 logger.error(f"Erro inesperado na chamada do Claude: {str(e)}")
-                raise
-            
-            # Extrai a resposta do Claude
-            assistant_message = ""
-            for content in response.content:
-                if content.type == "text":
-                    assistant_message += content.text
-            
-            logger.info(f"Resposta do Claude processada: {len(assistant_message)} caracteres")
+                return jsonify({"success": False, "message": "Unexpected error communicating with Claude"}), 500
             
         except Exception as e:
-            logger.error(f"Erro detalhado na chamada do Claude: {str(e)}")
-            return jsonify({"success": False, "message": "Error communicating with Claude"}), 500
-        
-        # Salva resposta do assistente
-        if not add_message_to_chat(chat_id, 'assistant', assistant_message):
-            logger.error("Falha ao salvar resposta do assistente")
-            return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
-        
-        logger.info("Mensagem processada com sucesso")
-        return jsonify({
-            "success": True,
-            "response": assistant_message,
-            "chart_data": parse_chart_from_response(assistant_message)
-        })
+            logger.error(f"Erro ao processar mensagem: {str(e)}")
+            return jsonify({"success": False, "message": "Error processing message"}), 500
         
     except Exception as e:
-        logger.error(f"Erro ao processar mensagem: {str(e)}")
-        return jsonify({"success": False, "message": str(e)}), 500
+        logger.error(f"Erro ao processar requisição: {str(e)}")
+        return jsonify({"success": False, "message": "Error processing request"}), 500
 
 @app.route('/api/admin/users', methods=['GET'])
 def get_users():
@@ -355,5 +409,5 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
     print("\n🚀 Servidor Horizont IA iniciado!")
     print(f"📍 Acesse: http://localhost:{port}")
-    print("👤 Login: admin/horizont2025")
+    print("�� Login: admin/horizont2025")
     app.run(host='0.0.0.0', port=port, debug=True)
