@@ -1424,139 +1424,250 @@
             const data = props.data;
             const canvasRef = React.useRef(null);
             const chartInstanceRef = React.useRef(null);
+            const dataHashRef = React.useRef(null);
+            const [chartError, setChartError] = React.useState(null);
+
+            // Criar hash dos dados para evitar re-renders desnecessários
+            const currentDataHash = React.useMemo(() => {
+                try {
+                    return JSON.stringify({
+                        years: data.years,
+                        initialValue: data.initialValue,
+                        title: data.title,
+                        products: Object.keys(data.products).sort()
+                    });
+                } catch (e) {
+                    console.error('Erro ao criar hash dos dados:', e);
+                    return null;
+                }
+            }, [data.years, data.initialValue, data.title, data.products]);
 
             React.useEffect(() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-
-                // Destruir gráfico anterior se existir
-                if (chartInstanceRef.current) {
-                    chartInstanceRef.current.destroy();
+                // Limpar erro anterior
+                setChartError(null);
+                
+                // Verificar se Chart.js está disponível
+                if (typeof Chart === 'undefined') {
+                    setChartError('Chart.js não está carregado');
+                    return;
                 }
 
-                // Preparar dados para o gráfico
-                const labels = Array.from({ length: data.years * 12 + 1 }, (_, i) => i);
-                const datasets = Object.entries(data.products).map(([name, product]) => {
-                    const monthlyMultiplier = Math.pow(1 + (product.rate / 100), 1/12);
-                    const values = labels.map(month => {
-                        return data.initialValue * Math.pow(monthlyMultiplier, month);
+                // Só recriar o gráfico se os dados realmente mudaram
+                if (dataHashRef.current === currentDataHash) {
+                    return;
+                }
+                
+                dataHashRef.current = currentDataHash;
+                
+                const canvas = canvasRef.current;
+                if (!canvas) {
+                    setChartError('Canvas não encontrado');
+                    return;
+                }
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    setChartError('Contexto 2D não disponível');
+                    return;
+                }
+
+                try {
+                    // Destruir gráfico anterior se existir
+                    if (chartInstanceRef.current) {
+                        chartInstanceRef.current.destroy();
+                        chartInstanceRef.current = null;
+                    }
+
+                    // Verificar se os dados são válidos
+                    if (!data || !data.products || !data.years || !data.initialValue) {
+                        setChartError('Dados do gráfico inválidos');
+                        return;
+                    }
+
+                    // Preparar dados para o gráfico
+                    const labels = Array.from({ length: data.years * 12 + 1 }, (_, i) => i);
+                    const datasets = Object.entries(data.products).map(([name, product]) => {
+                        const monthlyMultiplier = Math.pow(1 + (product.rate / 100), 1/12);
+                        const values = labels.map(month => {
+                            return data.initialValue * Math.pow(monthlyMultiplier, month);
+                        });
+
+                        return {
+                            label: name,
+                            data: values,
+                            borderColor: getRandomColor(),
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        };
                     });
 
-                    return {
-                        label: name,
-                        data: values,
-                        borderColor: getRandomColor(),
-                        backgroundColor: 'transparent',
-                        tension: 0.4
-                    };
-                });
-
-                // Criar novo gráfico
-                const newChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: data.title,
-                                color: '#ffffff',
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                }
-                            },
-                            legend: {
-                                display: true,
-                                position: 'bottom',
-                                labels: {
-                                    color: '#ffffff',
-                                    padding: 20,
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false,
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += new Intl.NumberFormat('pt-BR', {
-                                            style: 'currency',
-                                            currency: 'BRL'
-                                        }).format(context.parsed.y);
-                                        return label;
-                                    }
-                                }
-                            }
+                    // Criar novo gráfico
+                    const newChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: datasets
                         },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Meses',
-                                    color: '#ffffff'
-                                },
-                                ticks: {
-                                    color: '#ffffff'
-                                },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
-                                }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: {
+                                duration: 800,
+                                easing: 'easeInOutQuart'
                             },
-                            y: {
+                            plugins: {
                                 title: {
                                     display: true,
-                                    text: 'Valor (R$)',
-                                    color: '#ffffff'
-                                },
-                                ticks: {
+                                    text: data.title || 'Gráfico de Investimentos',
                                     color: '#ffffff',
-                                    callback: function(value) {
-                                        return new Intl.NumberFormat('pt-BR', {
-                                            style: 'currency',
-                                            currency: 'BRL',
-                                            notation: 'compact',
-                                            compactDisplay: 'short'
-                                        }).format(value);
+                                    font: {
+                                        size: 16,
+                                        weight: 'bold'
+                                    },
+                                    padding: {
+                                        top: 10,
+                                        bottom: 20
                                     }
                                 },
-                                grid: {
-                                    color: 'rgba(255, 255, 255, 0.1)'
+                                legend: {
+                                    display: true,
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#ffffff',
+                                        padding: 20,
+                                        font: {
+                                            size: 12
+                                        },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle'
+                                    }
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: '#404040',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            label += new Intl.NumberFormat('pt-BR', {
+                                                style: 'currency',
+                                                currency: 'BRL'
+                                            }).format(context.parsed.y);
+                                            return label;
+                                        }
+                                    }
                                 }
+                            },
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Meses',
+                                        color: '#ffffff',
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        color: '#ffffff',
+                                        maxTicksLimit: 20
+                                    },
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)',
+                                        drawBorder: false
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Valor (R$)',
+                                        color: '#ffffff',
+                                        font: {
+                                            size: 12,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        color: '#ffffff',
+                                        callback: function(value) {
+                                            return new Intl.NumberFormat('pt-BR', {
+                                                style: 'currency',
+                                                currency: 'BRL',
+                                                notation: 'compact',
+                                                compactDisplay: 'short'
+                                            }).format(value);
+                                        }
+                                    },
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.1)',
+                                        drawBorder: false
+                                    }
+                                }
+                            },
+                            interaction: {
+                                mode: 'nearest',
+                                axis: 'x',
+                                intersect: false
                             }
                         }
-                    }
-                });
+                    });
 
-                chartInstanceRef.current = newChart;
+                    chartInstanceRef.current = newChart;
+
+                } catch (error) {
+                    console.error('Erro ao criar gráfico:', error);
+                    setChartError('Erro ao renderizar gráfico: ' + error.message);
+                }
 
                 return () => {
                     if (chartInstanceRef.current) {
-                        chartInstanceRef.current.destroy();
+                        try {
+                            chartInstanceRef.current.destroy();
+                        } catch (e) {
+                            console.error('Erro ao destruir gráfico:', e);
+                        }
+                        chartInstanceRef.current = null;
                     }
                 };
-            }, [data.years, data.products, data.initialValue, data.title]);
+            }, [currentDataHash]); // Só depende do hash dos dados
+
+            // Se há erro, mostrar mensagem
+            if (chartError) {
+                return React.createElement('div', {
+                    className: 'chart-container',
+                    style: {
+                        padding: '20px',
+                        textAlign: 'center',
+                        color: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        border: '1px solid #dc2626',
+                        borderRadius: '6px'
+                    }
+                }, `Erro no gráfico: ${chartError}`);
+            }
 
             return React.createElement('div', {
                 className: 'chart-wrapper',
                 style: {
                     width: '100%',
                     height: '400px',
-                    position: 'relative'
+                    position: 'relative',
+                    backgroundColor: 'var(--surface-color)',
+                    borderRadius: 'var(--border-radius)',
+                    padding: '20px',
+                    margin: '20px 0',
+                    border: '1px solid var(--border-color)'
                 }
             }, React.createElement('canvas', {
                 ref: canvasRef,
