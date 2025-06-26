@@ -410,6 +410,20 @@
             .input-buttons {
                 margin-top: 8px;
             }
+
+            .sidebar-toggle {
+                display: block;
+                position: fixed;
+                left: 10px;
+                top: 10px;
+                z-index: 1001;
+                padding: 10px;
+                background: var(--surface-color);
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                color: var(--text-color);
+            }
         }
 
         /* Login Screen */
@@ -466,43 +480,8 @@
         }
 
         /* Mobile Styles */
-        .sidebar-overlay {
+        .sidebar-toggle {
             display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-        }
-
-        .sidebar-overlay.active {
-            display: block;
-        }
-
-        .header-mobile {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background-color: var(--surface-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .menu-btn {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .header-title {
-            flex: 1;
-            text-align: center;
-            font-weight: 600;
-            color: var(--text-color);
         }
 
         /* Markdown Styles */
@@ -1571,24 +1550,14 @@
             
             return (
                 <div className="app">
-                    {/* Mobile Header */}
-                    <div className="header-mobile">
-                        <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+                    {isMobile && (
+                        <button 
+                            className="sidebar-toggle"
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                        >
                             ☰
                         </button>
-                        <div className="header-title">Horizont IA</div>
-                        <button className="header-action" onClick={() => setShowPresentation(true)}>
-                            📊
-                        </button>
-                    </div>
-                    
-                    {/* Sidebar Overlay */}
-                    <div 
-                        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
-                        onClick={() => setSidebarOpen(false)}
-                    />
-                    
-                    {/* Sidebar */}
+                    )}
                     <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                         <div className="sidebar-header">
                             <div className="sidebar-logo">
