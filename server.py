@@ -165,6 +165,7 @@ def process_claude_message(messages, max_retries=1):
             # Obter o prompt do sistema
             system_prompt = get_prompt()
             logger.info(f"Prompt carregado: {system_prompt[:100] if system_prompt else 'NENHUM PROMPT ENCONTRADO'}...")
+            logger.info(f"Tamanho total do prompt: {len(system_prompt) if system_prompt else 0} caracteres")
             
             if not system_prompt:
                 logger.warning("Nenhum prompt do sistema encontrado, usando prompt padrão")
@@ -183,6 +184,7 @@ def process_claude_message(messages, max_retries=1):
                 max_tokens = 2048  # Limitar tokens para respostas com gráficos
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
+            logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}")
             
             response = client.messages.create(
                 model="claude-3-opus-20240229",
@@ -192,6 +194,7 @@ def process_claude_message(messages, max_retries=1):
                 temperature=temp
             )
             
+            logger.info(f"Resposta recebida do Claude: {len(response.content[0].text) if response and response.content else 0} caracteres")
             return response
             
         except Exception as e:
