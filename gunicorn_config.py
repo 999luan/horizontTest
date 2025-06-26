@@ -1,10 +1,14 @@
 bind = "0.0.0.0:10000"
 workers = 4
 threads = 2
-timeout = 120
+timeout = 300
 keepalive = 5
 worker_class = "sync"
 errorlog = "-"
 accesslog = "-"
 capture_output = True
-enable_stdio_inheritance = True 
+enable_stdio_inheritance = True
+max_requests = 1000
+max_requests_jitter = 50
+graceful_timeout = 120
+log_level = "info" 
