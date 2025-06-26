@@ -2161,17 +2161,251 @@
             const [error, setError] = React.useState(null);
             const [selectedFiles, setSelectedFiles] = React.useState([]);
 
+            const handleLogin = (user, admin, displayName) => {
+                setIsLoggedIn(true);
+                setUsername(user);
+                setIsAdmin(admin);
+                loadChats(user);
+            };
+
+            const loadChats = async (user) => {
+                try {
+                    const userChats = await api.getChats(user);
+                    setChats(userChats);
+                } catch (error) {
+                    console.error('Erro ao carregar chats:', error);
+                    setError('Erro ao carregar chats');
+                }
+            };
+
+            const createNewChat = async () => {
+                try {
+                    const newChat = await api.createChat(username);
+                    setChats([...chats, newChat]);
+                    selectChat(newChat);
+                } catch (error) {
+                    console.error('Erro ao criar chat:', error);
+                    setError('Erro ao criar novo chat');
+                }
+            };
+
+            const selectChat = (chat) => {
+                setCurrentChat(chat);
+                setMessages(chat.messages || []);
+                setError(null);
+                if (window.innerWidth <= 768) {
+                    setIsSidebarOpen(false);
+                }
+            };
+
+            const deleteChat = async (chatId) => {
+                try {
+                    await api.deleteChat(username, chatId);
+                    setChats(chats.filter(chat => chat.id !== chatId));
+                    if (currentChat && currentChat.id === chatId) {
+                        setCurrentChat(null);
+                        setMessages([]);
+                    }
+                } catch (error) {
+                    console.error('Erro ao deletar chat:', error);
+                    setError('Erro ao deletar chat');
+                }
+            };
+
+            const handleSendMessage = async () => {
+                if (!newMessage.trim() && selectedFiles.length === 0) return;
+
+                setIsLoading(true);
+                setError(null);
+
+                try {
+                    const response = await api.sendMessage(username, currentChat.id, newMessage, selectedFiles);
+                    setMessages([...messages, ...response.messages]);
+                    setNewMessage('');
+                    setSelectedFiles([]);
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar mensagem:', error);
+                    setError(error.message);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleFileChange = (event) => {
+                const files = Array.from(event.target.files);
+                setSelectedFiles(files);
+            };
+
+            const toggleSidebar = () => {
+                setIsSidebarOpen(!isSidebarOpen);
+            };
+
+            const renderSidebar = () => {
+                return React.createElement('div', {
+                    className: 'sidebar-content'
+                }, [
+                    React.createElement('div', {
+                        key: 'sidebar-header',
+                        className: 'sidebar-header'
+                    }, [
+                        React.createElement('h1', {
+                            key: 'app-title'
+                        }, 'Horizont IA'),
+                        isAdmin && React.createElement('button', {
+                            key: 'admin-button',
+                            className: 'admin-btn',
+                            onClick: () => setShowAdminPanel(true)
+                        }, '⚙️ Admin')
+                    ]),
+                    React.createElement('div', {
+                        key: 'chat-list',
+                        className: 'chat-list'
+                    }, [
+                        React.createElement('button', {
+                            key: 'new-chat',
+                            className: 'new-chat-btn',
+                            onClick: createNewChat
+                        }, '+ Nova Conversa'),
+                        ...chats.map(chat => 
+                            React.createElement('div', {
+                                key: chat.id,
+                                className: `chat-item ${currentChat && currentChat.id === chat.id ? 'active' : ''}`,
+                                onClick: () => selectChat(chat)
+                            }, [
+                                React.createElement('span', {
+                                    key: 'title',
+                                    className: 'chat-item-title'
+                                }, chat.title || 'Nova Conversa'),
+                                React.createElement('button', {
+                                    key: 'delete',
+                                    className: 'delete-chat-btn',
+                                    onClick: (e) => {
+                                        e.stopPropagation();
+                                        if (confirm('Tem certeza que deseja deletar esta conversa?')) {
+                                            deleteChat(chat.id);
+                                        }
+                                    }
+                                }, '🗑️')
+                            ])
+                        )
+                    ])
+                ]);
+            };
+
+            const renderMainContent = () => {
+                if (!isLoggedIn) {
+                    return React.createElement(Login, {
+                        key: 'login',
+                        onLogin: handleLogin
+                    });
+                }
+
+                if (!currentChat) {
+                    return React.createElement('div', {
+                        key: 'welcome',
+                        className: 'welcome-screen'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'welcome-title'
+                        }, 'Bem-vindo ao Horizont IA'),
+                        React.createElement('p', {
+                            key: 'welcome-text'
+                        }, 'Selecione uma conversa ou inicie uma nova para começar'),
+                        React.createElement('button', {
+                            key: 'welcome-btn',
+                            className: 'new-chat-btn',
+                            onClick: createNewChat
+                        }, '+ Nova Conversa')
+                    ]);
+                }
+
+                return React.createElement('div', {
+                    key: 'chat',
+                    className: 'chat-container'
+                }, [
+                    React.createElement('div', {
+                        key: 'messages',
+                        className: 'messages-container'
+                    }, [
+                        ...messages.map((msg, index) =>
+                            React.createElement('div', {
+                                key: index,
+                                className: `message ${msg.role} ${msg.error ? 'error' : ''}`
+                            }, [
+                                React.createElement('div', {
+                                    key: 'header',
+                                    className: 'message-header'
+                                }, [
+                                    React.createElement('div', {
+                                        key: 'avatar',
+                                        className: `${msg.role}-avatar ${msg.error ? 'error-avatar' : ''}`
+                                    }, msg.role === 'user' ? '👤' : (msg.error ? '⚠️' : '🎯')),
+                                    React.createElement('span', {
+                                        key: 'role'
+                                    }, msg.role === 'user' ? username : 'Consultor Horizont'),
+                                    React.createElement('span', {
+                                        key: 'date',
+                                        className: 'message-date'
+                                    }, new Date(msg.created_at).toLocaleString('pt-BR'))
+                                ]),
+                                React.createElement('div', {
+                                    key: 'content',
+                                    className: 'message-content',
+                                    onClick: msg.error ? () => handleSendMessage() : undefined
+                                }, renderMessage(msg.content))
+                            ])
+                        ),
+                        React.createElement('div', {
+                            key: 'end',
+                            ref: messagesEndRef
+                        })
+                    ]),
+                    React.createElement('div', {
+                        key: 'input',
+                        className: 'input-container'
+                    }, [
+                        React.createElement('div', {
+                            key: 'wrapper',
+                            className: 'input-wrapper'
+                        }, [
+                            React.createElement('textarea', {
+                                key: 'message',
+                                className: 'message-input',
+                                placeholder: 'Digite sua mensagem...',
+                                value: newMessage,
+                                onChange: (e) => setNewMessage(e.target.value),
+                                onKeyDown: (e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSendMessage();
+                                    }
+                                },
+                                disabled: isLoading
+                            }),
+                            React.createElement('button', {
+                                key: 'send',
+                                className: 'send-btn',
+                                onClick: handleSendMessage,
+                                disabled: isLoading
+                            }, isLoading ? '⏳' : '📤')
+                        ])
+                    ])
+                ]);
+            };
+
             // Cleanup effect
             React.useEffect(() => {
                 return () => {
-                    // Cleanup de qualquer subscription ou tarefa assíncrona
                     setMessages([]);
                     setChats([]);
                     setCurrentChat(null);
                 };
             }, []);
 
-            return React.createElement('div', { 
+            return React.createElement('div', {
                 className: 'app' + (!isLoggedIn ? ' login-mode' : ''),
                 key: 'app-root'
             }, [
