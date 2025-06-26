@@ -11,95 +11,130 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        :root {
-            --background-color: #1a1a1a;
-            --surface-color: #2a2a2a;
-            --surface-hover: #333333;
-            --text-color: #ffffff;
-            --text-secondary: #b3b3b3;
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --border-color: #404040;
-            --danger-color: #dc2626;
-            --success-color: #059669;
-            --border-radius: 6px;
-            --spacing-xs: 5px;
-            --spacing-sm: 10px;
-            --spacing-md: 15px;
-            --spacing-lg: 20px;
-            --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
+        /* Reset básico */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* Cores e variáveis básicas - sem CSS moderno */
+        .app {
+            --bg-color: #1a1a1a;
+            --surface: #2a2a2a;
+            --surface-hover: #333333;
+            --text: #ffffff;
+            --text-secondary: #b3b3b3;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #404040;
+            --danger: #dc2626;
+            --success: #059669;
+            --radius: 6px;
+            --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
             line-height: 1.5;
             height: 100vh;
             overflow: hidden;
         }
 
-        #root {
-            height: 100vh;
-        }
-
-        .app {
+        /* Login */
+        .login-screen {
             display: flex;
-            height: 100vh;
-            overflow: hidden;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            background-color: #1a1a1a;
         }
 
-        /* Sidebar Styles */
+        .login-box {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 6px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Menu mobile */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 900;
+            background: #2a2a2a;
+            border: none;
+            color: #ffffff;
+            font-size: 24px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .menu-toggle.visible {
+            display: block;
+        }
+
+        /* Sidebar */
         .sidebar {
-            width: 300px;
-            background-color: var(--surface-color);
-            border-right: 1px solid var(--border-color);
+            width: 280px;
+            background-color: #2a2a2a;
+            border-right: 1px solid #404040;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
         }
 
+        /* Mobile */
         @media (max-width: 768px) {
+            .menu-toggle.visible {
+                display: block;
+            }
+
             .sidebar {
                 position: fixed;
-                left: 0;
                 top: 0;
-                transform: translateX(-100%);
+                left: -100%;
                 width: 85%;
+                height: 100%;
+                background: #1a1a1a;
                 z-index: 1000;
             }
 
             .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .menu-toggle {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 1001;
-                background: var(--primary-color);
-                border: none;
-                color: white;
-                padding: 10px;
-                border-radius: var(--border-radius);
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: left 0.3s ease;
-            }
-
-            .menu-toggle.open {
-                left: calc(85% + 10px);
+                left: 0;
             }
 
             .sidebar-overlay {
@@ -107,17 +142,98 @@
                 position: fixed;
                 top: 0;
                 left: 0;
-                width: 100%;
-                height: 100%;
+                right: 0;
+                bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
+                z-index: 800;
             }
 
             .sidebar-overlay.show {
                 display: block;
             }
+
+            .main-content {
+                padding-top: 60px;
+                width: 100%;
+            }
+
+            .message-input {
+                font-size: 16px;
+                padding: 8px;
+            }
         }
 
+        /* Layout principal */
+        .app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mensagens */
+        .message {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #2a2a2a;
+        }
+
+        .message-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #ffffff;
+            font-size: 16px;
+            resize: none;
+        }
+
+        /* Botões */
+        .button {
+            padding: 8px 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #1d4ed8;
+        }
+
+        /* Login styles */
+        .login-title {
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .login-error {
+            color: var(--danger-color);
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        /* Menu toggle button */
+        .menu-toggle:hover {
+            background: var(--surface-hover);
+        }
+
+        .menu-toggle.visible {
+            display: block;
+        }
+
+        /* Sidebar Styles */
         .sidebar-header {
             padding: 20px;
             border-bottom: 1px solid var(--border-color);
@@ -257,14 +373,6 @@
         }
 
         /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background-color: var(--background-color);
-        }
-
         .messages-container {
             flex: 1;
             overflow-y: auto;
@@ -272,30 +380,6 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-        }
-
-        .message {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 85%;
-            padding: 16px;
-            border-radius: 8px;
-            background-color: var(--surface-color);
-            margin: 8px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border-color);
-        }
-
-        .message.assistant {
-            align-self: flex-start;
-            border-top-left-radius: 2px;
-        }
-
-        .message.user {
-            align-self: flex-end;
-            border-top-right-radius: 2px;
-            background-color: var(--primary-color);
         }
 
         .message-header {
@@ -369,24 +453,6 @@
             border-radius: 8px;
             padding: 8px;
             border: 1px solid var(--border-color);
-        }
-
-        .message-input {
-            flex: 1;
-            min-height: 40px;
-            max-height: 120px;
-            padding: 8px;
-            border: none;
-            background: none;
-            color: var(--text-color);
-            font-size: 0.95rem;
-            resize: none;
-            outline: none;
-        }
-
-        .message-input:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
         }
 
         .input-actions {
@@ -560,149 +626,6 @@
             to {
                 transform: translate(-50%, 0);
                 opacity: 1;
-            }
-        }
-
-        /* Mobile Styles */
-        @media (max-width: 768px) {
-            .app {
-                position: relative;
-                overflow: hidden;
-            }
-
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -100%;
-                width: 85%;
-                height: 100%;
-                background: var(--background-color);
-                z-index: 1000;
-                transition: left 0.3s ease;
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
-            }
-
-            .sidebar.open {
-                left: 0;
-            }
-
-            .menu-toggle {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                z-index: 900;
-                background: none;
-                border: none;
-                color: white;
-                font-size: 24px;
-                padding: 8px;
-                cursor: pointer;
-            }
-
-            .main-content {
-                padding-top: 60px;
-                width: 100%;
-            }
-
-            .messages-container {
-                padding: 10px;
-            }
-
-            .message-content {
-                margin-left: 0;
-                padding: 12px;
-            }
-
-            .input-area {
-                padding: 10px;
-                padding-bottom: calc(10px + env(safe-area-inset-bottom));
-            }
-
-            .input-container {
-                padding: 8px;
-            }
-
-            .message-input {
-                font-size: 16px;
-                padding: 8px;
-            }
-
-            /* Overlay para quando o sidebar estiver aberto */
-            .sidebar-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity 0.3s ease;
-            }
-
-            .sidebar-overlay.active {
-                opacity: 1;
-                visibility: visible;
-            }
-
-            /* Ajustes para o gráfico em mobile */
-            .chart-container {
-                margin: 10px 0;
-                padding: 10px;
-            }
-
-            .chart-actions {
-                position: static;
-                margin-bottom: 10px;
-                display: flex;
-                justify-content: flex-end;
-                gap: 8px;
-            }
-
-            .chart-btn {
-                padding: 6px 10px;
-                font-size: 12px;
-            }
-        }
-
-        /* Ajustes para telas muito pequenas */
-        @media (max-width: 360px) {
-            .sidebar {
-                width: 90%;
-            }
-
-            .message-header {
-                flex-wrap: wrap;
-            }
-
-            .message-content {
-                font-size: 14px;
-            }
-
-            .input-container {
-                flex-direction: column;
-            }
-
-            .input-actions {
-                flex-direction: row;
-                justify-content: space-between;
-                margin-top: 8px;
-            }
-        }
-
-        /* Ajustes para notch do iPhone */
-        @supports (padding-top: env(safe-area-inset-top)) {
-            .sidebar {
-                padding-top: env(safe-area-inset-top);
-            }
-
-            .menu-toggle {
-                top: calc(10px + env(safe-area-inset-top));
-            }
-
-            .main-content {
-                padding-top: calc(60px + env(safe-area-inset-top));
             }
         }
 
@@ -1017,16 +940,6 @@
             margin-left: auto;
         }
 
-        .login-error {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: var(--danger-color);
-            color: var(--text-color);
-            border-radius: 4px;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
         .user-actions-btns {
             display: flex;
             gap: 8px;
@@ -1091,22 +1004,22 @@
             opacity: 0.7;
         }
 
-                    .chart-container {
-                background-color: var(--surface-color);
-                border-radius: var(--border-radius);
-                padding: 20px;
-                margin: 20px 0;
-                border: 1px solid var(--border-color);
-            }
-            
-            .chart-wrapper {
-                margin: 20px 0;
-            }
-            
-            .chart-container canvas {
-                max-width: 100%;
-            }
+        .chart-container {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
         
+        .chart-wrapper {
+            margin: 20px 0;
+        }
+        
+        .chart-container canvas {
+            max-width: 100%;
+        }
+    
         @media (max-width: 768px) {
             .chart-container {
                 padding: 10px;
@@ -1171,7 +1084,8 @@
         };
 
         // Chart Component
-        const ChartComponent = React.memo(function ChartComponent({ data }) {
+        const ChartComponent = React.memo(function ChartComponent(props) {
+            const data = props.data;
             const canvasRef = React.useRef(null);
             const chartInstanceRef = React.useRef(null);
 
@@ -1451,7 +1365,8 @@
         };
         
         // Login Component
-        const Login = ({ onLogin }) => {
+        const Login = function(props) {
+            const onLogin = props.onLogin;
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
@@ -1503,7 +1418,11 @@
         };
         
         // Presentation Modal
-        const PresentationModal = ({ isOpen, onClose, chatData, username }) => {
+        const PresentationModal = function(props) {
+            const isOpen = props.isOpen;
+            const onClose = props.onClose;
+            const chatData = props.chatData;
+            const username = props.username;
             const [clientName, setClientName] = useState('');
             
             if (!isOpen) return null;
@@ -1664,7 +1583,8 @@
         };
 
         // User Manager Component
-        const UserManager = ({ onUserCreated }) => {
+        const UserManager = function(props) {
+            const onUserCreated = props.onUserCreated;
             const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
             const [error, setError] = useState('');
             const [success, setSuccess] = useState('');
@@ -1721,7 +1641,8 @@
         };
 
         // Admin Panel Component
-        const AdminPanel = ({ onClose }) => {
+        const AdminPanel = function(props) {
+            const onClose = props.onClose;
             const [users, setUsers] = useState([]);
             const [selectedUser, setSelectedUser] = useState(null);
             const [userChats, setUserChats] = useState([]);
@@ -1910,15 +1831,15 @@
             // Load user's chats
             const loadChats = async () => {
                 try {
-                    const userChats = await api.getChats(username);
-                    setChats(userChats);
-                    if (userChats.length > 0 && !currentChat) {
-                        setCurrentChat(userChats[0]);
-                        setMessages(userChats[0].messages || []);
+                    const chats = await api.getChats(username);
+                    setChats(chats);
+                    if (chats && chats.length > 0) {
+                        setCurrentChat(chats[0]);
+                        setMessages(chats[0].messages || []);
                     }
                 } catch (error) {
                     console.error('Erro ao carregar chats:', error);
-                    setError('Não foi possível carregar os chats. Por favor, tente novamente.');
+                    setError('Erro ao carregar chats');
                 }
             };
 
@@ -2132,7 +2053,11 @@
                         }, [
                             React.createElement('button', {
                                 key: 'attach',
-                                onClick: () => fileInputRef.current && fileInputRef.current.click(),
+                                onClick: () => {
+                                    if (fileInputRef.current) {
+                                        fileInputRef.current.click();
+                                    }
+                                },
                                 disabled: isLoading,
                                 className: 'attach-button'
                             }, '📎'),
@@ -2217,31 +2142,33 @@
                 ];
             };
 
-            return React.createElement('div', { className: 'app' }, [
-                // Menu toggle button for mobile
-                React.createElement('button', {
+            return React.createElement('div', { 
+                className: 'app' + (!isLoggedIn ? ' login-mode' : '')
+            }, [
+                // Menu toggle button for mobile - only show if logged in
+                isLoggedIn ? React.createElement('button', {
                     key: 'menu-toggle',
-                    className: 'menu-toggle' + (isSidebarOpen ? ' open' : ''),
+                    className: 'menu-toggle visible',
                     onClick: toggleSidebar
-                }, '☰'),
+                }, '☰') : null,
                 
-                // Sidebar overlay
-                React.createElement('div', {
+                // Sidebar overlay - only show if logged in
+                isLoggedIn ? React.createElement('div', {
                     key: 'sidebar-overlay',
                     className: 'sidebar-overlay' + (isSidebarOpen ? ' show' : ''),
                     onClick: () => setIsSidebarOpen(false)
-                }),
+                }) : null,
                 
-                // Sidebar
-                React.createElement('div', {
+                // Sidebar - only show if logged in
+                isLoggedIn ? React.createElement('div', {
                     key: 'sidebar',
                     className: 'sidebar' + (isSidebarOpen ? ' open' : '')
-                }, renderSidebar()),
+                }, renderSidebar()) : null,
                 
                 // Main content
                 React.createElement('div', {
                     key: 'main',
-                    className: 'main'
+                    className: isLoggedIn ? 'main-content' : ''
                 }, renderMainContent())
             ]);
         }
