@@ -1888,7 +1888,9 @@
 
             // Scroll to bottom of messages
             const scrollToBottom = () => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+                }
             };
 
             React.useEffect(() => {
@@ -1942,9 +1944,9 @@
                     await api.deleteChat(username, chatId);
                     const updatedChats = chats.filter(chat => chat.id !== chatId);
                     setChats(updatedChats);
-                    if (currentChat?.id === chatId) {
+                    if (currentChat && currentChat.id === chatId) {
                         setCurrentChat(updatedChats[0] || null);
-                        setMessages(updatedChats[0]?.messages || []);
+                        setMessages((updatedChats[0] && updatedChats[0].messages) || []);
                     }
                 } catch (error) {
                     console.error('Erro ao deletar chat:', error);
@@ -2132,7 +2134,7 @@
                         }, [
                             React.createElement('button', {
                                 key: 'attach',
-                                onClick: () => fileInputRef.current?.click(),
+                                onClick: () => fileInputRef.current && fileInputRef.current.click(),
                                 disabled: isLoading,
                                 className: 'attach-button'
                             }, '📎'),
@@ -2197,7 +2199,7 @@
                     }, chats.map(chat =>
                         React.createElement('div', {
                             key: chat.id,
-                            className: `chat-item ${currentChat?.id === chat.id ? 'active' : ''}`,
+                            className: `chat-item ${(currentChat && currentChat.id === chat.id) ? 'active' : ''}`,
                             onClick: () => handleSelectChat(chat)
                         }, [
                             React.createElement('span', {
