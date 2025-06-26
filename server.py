@@ -44,18 +44,23 @@ CORS(app)
 api_key = os.getenv('ANTHROPIC_API_KEY')
 logger.info("Verificando variáveis de ambiente:")
 logger.info(f"ANTHROPIC_API_KEY está definida? {'Sim' if api_key else 'Não'}")
-
-if not api_key:
-    logger.error("ANTHROPIC_API_KEY não está configurada!")
-    raise ValueError("ANTHROPIC_API_KEY environment variable is required")
-
-logger.info(f"Comprimento da API key: {len(api_key)}")
-logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
+if api_key:
+    logger.info(f"Comprimento da API key: {len(api_key)}")
+    logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
 
 logger.info("Inicializando cliente do Claude...")
 try:
-    client = anthropic.Anthropic(api_key=api_key)
+    client = anthropic.Anthropic(
+        api_key=api_key,
+        default_headers={
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json"
+        }
+    )
     logger.info("Cliente do Claude inicializado com sucesso!")
+    logger.info("Headers configurados:")
+    logger.info(f"anthropic-version: {client._client.default_headers.get('anthropic-version')}")
+    logger.info(f"content-type: {client._client.default_headers.get('content-type')}")
 except Exception as e:
     logger.error(f"Erro ao inicializar cliente do Claude: {e}")
     raise
