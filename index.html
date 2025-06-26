@@ -477,6 +477,40 @@
             font-size: 1.1rem;
         }
 
+        .empty-state-content {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        /* Error Toast */
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 9999;
+            font-size: 14px;
+            max-width: 80%;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translate(-50%, -100%);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, 0);
+                opacity: 1;
+            }
+        }
+
         /* Mobile Styles */
         @media (max-width: 768px) {
             .sidebar {
@@ -1045,7 +1079,6 @@
                         body: JSON.stringify({ username, chatId, message, files })
                     });
 
-                    // Check if response is ok before trying to parse JSON
                     if (!response.ok) {
                         let errorMessage = 'Erro no servidor';
                         try {
@@ -1078,48 +1111,12 @@
                         throw new Error(`${errorMessage} (Status: ${response.status})`);
                     }
 
-                    // Try to parse JSON response with better error handling
-                    let data;
-                    try {
-                        const responseText = await response.text();
-                        if (!responseText) {
-                            throw new Error('Resposta vazia do servidor');
-                        }
-                        
-                        // Try to clean the response if it has extra characters
-                        let cleanText = responseText.trim();
-                        // Remove any leading/trailing characters that would make it invalid JSON
-                        while (cleanText && !cleanText.startsWith('{')) {
-                            cleanText = cleanText.slice(1);
-                        }
-                        while (cleanText && !cleanText.endsWith('}')) {
-                            cleanText = cleanText.slice(0, -1);
-                        }
-                        
-                        try {
-                            data = JSON.parse(cleanText);
-                        } catch (e) {
-                            console.error('Erro no parsing JSON limpo:', e);
-                            // If clean parse fails, try original
-                            data = JSON.parse(responseText);
-                        }
-                    } catch (e) {
-                        console.error('Erro ao processar resposta:', e);
-                        throw new Error('Não foi possível processar a resposta do servidor. Por favor, tente novamente.');
-                    }
-
-                    if (!data.success) {
-                        throw new Error(data.message || 'Erro desconhecido');
-                    }
-
-                    return {
-                        response: data.response,
-                        chart_data: data.chart_data
-                    };
-                } catch (error) {
-                    console.error('Erro na API:', error);
-                    // Re-throw with user-friendly message
-                    throw new Error(error.message || 'Ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.');
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.message);
+                    return data;
+                } catch (err) {
+                    console.error('Erro ao enviar mensagem:', err);
+                    throw err;
                 }
             },
             
@@ -1226,172 +1223,175 @@
             const chartRef = useRef(null);
             const chartId = useRef(`chart-${Date.now()}`).current;
             
-            // Função para formatar valores monetários
-            const formatCurrency = (value) => {
-                if (value >= 1000000) {
-                    return `R$ ${(value / 1000000).toFixed(2)}M`;
-                } else if (value >= 1000) {
-                    return `R$ ${(value / 1000).toFixed(1)}k`;
-                }
-                return `R$ ${value.toFixed(2)}`;
-            };
-            
             useEffect(() => {
                 if (!data || !chartRef.current) return;
                 
-                // Extrair dados customizados se existirem
-                let traces = [];
-                let layout = {};
-                
-                if (data.products) {
-                    // Gráfico customizado com produtos específicos
-                    const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
-                    const initialValue = data.initialValue || 100000;
+                let chart = null;
+                try {
+                    // Extrair dados customizados se existirem
+                    let traces = [];
+                    let layout = {};
                     
-                    Object.entries(data.products).forEach(([name, info]) => {
-                        let yearlyMultiplier;
+                    if (data.products) {
+                        // Gráfico customizado com produtos específicos
+                        const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
+                        const initialValue = data.initialValue || 100000;
                         
-                        // Usar yearlyMultiplier se disponível, senão calcular
-                        if (info.yearlyMultiplier) {
-                            yearlyMultiplier = info.yearlyMultiplier;
-                        } else if (info.monthlyRate) {
-                            yearlyMultiplier = Math.pow(1 + info.monthlyRate, 12);
-                        } else if (info.rate) {
-                            yearlyMultiplier = 1 + (info.rate / 100);
-                        } else {
-                            yearlyMultiplier = 1.1; // fallback
-                        }
-                        
-                        traces.push({
-                            x: years,
-                            y: years.map(year => initialValue * Math.pow(yearlyMultiplier, year)),
-                            name: name,
-                            mode: 'lines+markers',
-                            line: { width: 3 },
-                            text: years.map(year => {
-                                const value = initialValue * Math.pow(yearlyMultiplier, year);
-                                return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                            }),
-                            hovertemplate: '%{text}<extra></extra>'
+                        Object.entries(data.products).forEach(([name, info]) => {
+                            let yearlyMultiplier;
+                            
+                            // Usar yearlyMultiplier se disponível, senão calcular
+                            if (info.yearlyMultiplier) {
+                                yearlyMultiplier = info.yearlyMultiplier;
+                            } else if (info.monthlyRate) {
+                                yearlyMultiplier = Math.pow(1 + info.monthlyRate, 12);
+                            } else if (info.rate) {
+                                yearlyMultiplier = 1 + (info.rate / 100);
+                            } else {
+                                yearlyMultiplier = 1.1; // fallback
+                            }
+                            
+                            traces.push({
+                                x: years,
+                                y: years.map(year => initialValue * Math.pow(yearlyMultiplier, year)),
+                                name: name,
+                                mode: 'lines+markers',
+                                line: { width: 3 },
+                                text: years.map(year => {
+                                    const value = initialValue * Math.pow(yearlyMultiplier, year);
+                                    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                                }),
+                                hovertemplate: '%{text}<extra></extra>'
+                            });
                         });
-                    });
-                    
-                    layout = {
-                        title: data.title || 'Comparativo de Investimentos',
-                        xaxis: { 
-                            title: 'Anos',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        },
-                        yaxis: { 
-                            title: 'Valor',
-                            tickformat: '~s',
-                            tickmode: 'auto',
-                            nticks: 8,
-                            gridcolor: 'rgba(255,255,255,0.1)',
-                            tickfont: { size: 11 }
-                        }
-                    };
-                } else {
-                    // Gráfico padrão
-                    const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
-                    const initialValue = data.initialValue || 100000;
-                    
-                    traces = [
-                        {
-                            x: years,
-                            y: years.map(year => initialValue * Math.pow(1.0775, year)),
-                            name: 'Poupança (7.75%)',
-                            line: { color: '#ff6b6b' }
-                        },
-                        {
-                            x: years,
-                            y: years.map(year => initialValue * Math.pow(1.1088, year)),
-                            name: 'CDI (10.88%)',
-                            line: { color: '#ffa726' }
-                        },
-                        {
-                            x: years,
-                            y: years.map(year => initialValue * Math.pow(1.1539, year)), // 1.20% ao mês = 15.39% ao ano
-                            name: 'Horizont Smart (15.39%)',
-                            line: { color: '#51cf66' }
-                        },
-                        {
-                            x: years,
-                            y: years.map(year => initialValue * Math.pow(1.1937, year)),
-                            name: 'Horizont Trend (19.37%)',
-                            line: { color: '#339af0' }
-                        }
-                    ];
-                    
-                    layout = {
-                        title: '📊 Comparativo de Investimentos',
-                        xaxis: { 
-                            title: 'Anos',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        },
-                        yaxis: { 
-                            title: 'Valor (R$)',
-                            tickformat: ',.0f',
-                            gridcolor: 'rgba(255,255,255,0.1)'
-                        }
-                    };
-                }
-                
-                // Layout comum
-                layout = {
-                    ...layout,
-                    plot_bgcolor: 'rgba(0,0,0,0)',
-                    paper_bgcolor: 'rgba(0,0,0,0)',
-                    font: { color: 'white', size: 12 },
-                    showlegend: true,
-                    legend: {
-                        x: 0,
-                        y: 1,
-                        bgcolor: 'rgba(0,0,0,0.5)'
-                    },
-                    margin: { l: 100, r: 20, t: 60, b: 60 },
-                    autosize: true,
-                    yaxis: {
-                        ...layout.yaxis,
-                        tickformat: ',.0f',
-                        tickprefix: 'R$ ',
-                        separatethousands: true
+                        
+                        layout = {
+                            title: data.title || 'Comparativo de Investimentos',
+                            xaxis: { 
+                                title: 'Anos',
+                                gridcolor: 'rgba(255,255,255,0.1)'
+                            },
+                            yaxis: { 
+                                title: 'Valor',
+                                tickformat: '~s',
+                                tickmode: 'auto',
+                                nticks: 8,
+                                gridcolor: 'rgba(255,255,255,0.1)',
+                                tickfont: { size: 11 }
+                            }
+                        };
+                    } else {
+                        // Gráfico padrão
+                        const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
+                        const initialValue = data.initialValue || 100000;
+                        
+                        traces = [
+                            {
+                                x: years,
+                                y: years.map(year => initialValue * Math.pow(1.0775, year)),
+                                name: 'Poupança (7.75%)',
+                                line: { color: '#ff6b6b' }
+                            },
+                            {
+                                x: years,
+                                y: years.map(year => initialValue * Math.pow(1.1088, year)),
+                                name: 'CDI (10.88%)',
+                                line: { color: '#ffa726' }
+                            },
+                            {
+                                x: years,
+                                y: years.map(year => initialValue * Math.pow(1.1539, year)),
+                                name: 'Horizont Smart (15.39%)',
+                                line: { color: '#51cf66' }
+                            },
+                            {
+                                x: years,
+                                y: years.map(year => initialValue * Math.pow(1.1937, year)),
+                                name: 'Horizont Trend (19.37%)',
+                                line: { color: '#339af0' }
+                            }
+                        ];
+                        
+                        layout = {
+                            title: '📊 Comparativo de Investimentos',
+                            xaxis: { 
+                                title: 'Anos',
+                                gridcolor: 'rgba(255,255,255,0.1)'
+                            },
+                            yaxis: { 
+                                title: 'Valor (R$)',
+                                tickformat: ',.0f',
+                                gridcolor: 'rgba(255,255,255,0.1)'
+                            }
+                        };
                     }
-                };
-                
-                // Configurar locale para português
-                const config = {
-                    responsive: true,
-                    displayModeBar: false,
-                    locale: 'pt-br',
-                    locales: {
-                        'pt-br': {
-                            format: {
-                                thousands: '.',
-                                decimal: ','
+                    
+                    // Layout comum
+                    layout = {
+                        ...layout,
+                        plot_bgcolor: 'rgba(0,0,0,0)',
+                        paper_bgcolor: 'rgba(0,0,0,0)',
+                        font: { color: 'white', size: 12 },
+                        showlegend: true,
+                        legend: {
+                            x: 0,
+                            y: 1,
+                            bgcolor: 'rgba(0,0,0,0.5)'
+                        },
+                        margin: { l: 100, r: 20, t: 60, b: 60 },
+                        autosize: true,
+                        yaxis: {
+                            ...layout.yaxis,
+                            tickformat: ',.0f',
+                            tickprefix: 'R$ ',
+                            separatethousands: true
+                        }
+                    };
+                    
+                    // Configurar locale para português
+                    const config = {
+                        responsive: true,
+                        displayModeBar: false,
+                        locale: 'pt-br',
+                        locales: {
+                            'pt-br': {
+                                format: {
+                                    thousands: '.',
+                                    decimal: ','
+                                }
                             }
                         }
-                    }
-                };
-                
-                Plotly.newPlot(chartRef.current, traces, layout, config);
-                
-                // Resize handler
-                const handleResize = () => {
-                    Plotly.Plots.resize(chartRef.current);
-                };
-                
-                window.addEventListener('resize', handleResize);
-                
-                return () => {
-                    window.removeEventListener('resize', handleResize);
-                    if (chartRef.current) {
+                    };
+                    
+                    chart = Plotly.newPlot(chartRef.current, traces, layout, config);
+                    
+                    // Resize handler
+                    const handleResize = () => {
+                        if (chartRef.current) {
+                            Plotly.Plots.resize(chartRef.current);
+                        }
+                    };
+                    
+                    window.addEventListener('resize', handleResize);
+                    
+                    return () => {
+                        window.removeEventListener('resize', handleResize);
+                        if (chartRef.current) {
+                            Plotly.purge(chartRef.current);
+                        }
+                    };
+                } catch (error) {
+                    console.error('Erro ao criar gráfico:', error);
+                    // Cleanup on error
+                    if (chart && chartRef.current) {
                         Plotly.purge(chartRef.current);
                     }
-                };
+                }
             }, [data]);
             
             const handleSave = async () => {
+                if (!chartRef.current) return;
+                
                 try {
                     await Plotly.downloadImage(chartRef.current, {
                         format: 'png',
@@ -1400,11 +1400,14 @@
                         filename: `horizont-comparativo-${Date.now()}`
                     });
                 } catch (err) {
-                    console.error('Erro ao salvar:', err);
+                    console.error('Erro ao salvar gráfico:', err);
+                    alert('Não foi possível salvar o gráfico. Por favor, tente novamente.');
                 }
             };
             
             const handleShare = async () => {
+                if (!chartRef.current) return;
+                
                 try {
                     const imgData = await Plotly.toImage(chartRef.current, {
                         format: 'png',
@@ -1426,6 +1429,7 @@
                         handleSave();
                     }
                 } catch (err) {
+                    console.error('Erro ao compartilhar gráfico:', err);
                     handleSave();
                 }
             };
@@ -1825,48 +1829,55 @@
             const [activeChat, setActiveChat] = useState(null);
             const [newMessage, setNewMessage] = useState('');
             const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
             const [showAdminPanel, setShowAdminPanel] = useState(false);
             const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
             const [sidebarOpen, setSidebarOpen] = useState(false);
             const [attachedFiles, setAttachedFiles] = useState([]);
+            const [showPresentation, setShowPresentation] = useState(false);
+            
             const messagesEndRef = useRef(null);
-            const chartRef = useRef(null);
-
-            const scrollToBottom = () => {
-                if (messagesEndRef.current) {
-                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-                }
+            const fileInputRef = useRef(null);
+            const inputRef = useRef(null);
+            
+            // Cleanup function for resetting state
+            const resetState = () => {
+                setUser(null);
+                setUserName('');
+                setIsAdmin(false);
+                setChats([]);
+                setActiveChat(null);
+                setNewMessage('');
+                setLoading(false);
+                setError(null);
+                setShowAdminPanel(false);
+                setSidebarOpen(false);
+                setAttachedFiles([]);
+                setShowPresentation(false);
             };
-
-            const updateChart = (chartData) => {
-                if (chartRef.current && chartData) {
-                    // Atualiza o gráfico com os novos dados
-                    try {
-                        const data = JSON.parse(chartData);
-                        if (data && data.type === 'chart') {
-                            // Renderiza o gráfico
-                            Chart.render(chartRef.current, data);
-                        }
-                    } catch (e) {
-                        console.error('Erro ao atualizar gráfico:', e);
-                    }
-                }
+            
+            // Error handling function
+            const handleError = (error, context) => {
+                console.error(`Erro em ${context}:`, error);
+                setError(error.message || 'Ocorreu um erro inesperado');
+                setTimeout(() => setError(null), 5000);
             };
-
+            
             useEffect(() => {
                 const handleResize = () => {
                     setIsMobile(window.innerWidth <= 768);
                 };
-
+                
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
-
+            
             useEffect(() => {
-                scrollToBottom();
+                if (messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
             }, [chats, activeChat]);
             
-            // Carregar chats quando usuário fizer login
             useEffect(() => {
                 if (user) {
                     loadChats();
@@ -1874,51 +1885,59 @@
             }, [user]);
             
             const loadChats = async () => {
+                setLoading(true);
+                setError(null);
+                
                 try {
-                    const chats = await api.getChats(user.username);
-                    setChats(chats);
-                    if (chats.length > 0 && activeChat === null) {
+                    const loadedChats = await api.getChats(user.username);
+                    setChats(loadedChats);
+                    if (loadedChats.length > 0 && activeChat === null) {
                         setActiveChat(0);
                     }
                 } catch (err) {
-                    console.error('Erro ao carregar chats:', err);
-                    alert('Erro ao carregar conversas');
+                    handleError(err, 'loadChats');
+                } finally {
+                    setLoading(false);
                 }
             };
             
             const handleLogin = (username, isAdmin, name) => {
-                setUser({ username, role: isAdmin ? 'admin' : 'user', name });
-                setIsAdmin(isAdmin);
-                setUserName(name);
+                try {
+                    setUser({ username, role: isAdmin ? 'admin' : 'user', name });
+                    setIsAdmin(isAdmin);
+                    setUserName(name);
+                } catch (err) {
+                    handleError(err, 'handleLogin');
+                    resetState();
+                }
             };
             
             const handleLogout = () => {
-                setUser(null);
-                setIsAdmin(false);
-                setUserName('');
-                setChats([]);
-                setActiveChat(null);
-                setNewMessage('');
-                setSidebarOpen(false);
-                setShowAdminPanel(false);
-                setAttachedFiles([]);
+                resetState();
             };
             
             const handleNewChat = async () => {
+                setLoading(true);
+                setError(null);
+                
                 try {
                     const result = await api.createChat(user.username);
                     await loadChats();
                     setActiveChat(0);
                     setSidebarOpen(false);
                 } catch (err) {
-                    console.error('Erro ao criar chat:', err);
-                    alert('Erro ao criar novo chat');
+                    handleError(err, 'handleNewChat');
+                } finally {
+                    setLoading(false);
                 }
             };
             
             const handleDeleteChat = async (index, e) => {
                 e.stopPropagation();
                 if (!confirm('Deletar conversa?')) return;
+                
+                setLoading(true);
+                setError(null);
                 
                 try {
                     const chatId = chats[index].id;
@@ -1929,75 +1948,82 @@
                         setActiveChat(chats.length > 1 ? 0 : null);
                     }
                 } catch (err) {
-                    console.error('Erro ao deletar:', err);
-                    alert('Erro ao deletar conversa');
+                    handleError(err, 'handleDeleteChat');
+                } finally {
+                    setLoading(false);
                 }
             };
             
-            const handleSendMessage = async (event) => {
-                if (event && event.key && event.key !== 'Enter') return;
-                if (!newMessage.trim()) return;
-
-                const message = newMessage.trim();
+            const handleSendMessage = async (e) => {
+                e?.preventDefault();
+                
+                if (!newMessage.trim() && attachedFiles.length === 0) return;
+                if (!user || activeChat === null || loading) return;
+                
+                const currentMessage = newMessage;
+                const currentFiles = attachedFiles;
+                const chatId = chats[activeChat].id;
+                
                 setNewMessage('');
-                scrollToBottom();
-
+                setAttachedFiles([]);
+                setLoading(true);
+                setError(null);
+                
                 try {
-                    setLoading(true);
-                    const result = await api.sendMessage(user.username, activeChat, message);
+                    // Convert files to base64
+                    const filesData = await Promise.all(
+                        currentFiles.map(file => {
+                            return new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                    resolve({
+                                        name: file.name,
+                                        type: file.type,
+                                        size: file.size,
+                                        data: reader.result.split(',')[1]
+                                    });
+                                };
+                                reader.onerror = () => reject(new Error(`Erro ao ler arquivo ${file.name}`));
+                                reader.readAsDataURL(file.data);
+                            });
+                        })
+                    );
                     
-                    if (result && result.response) {
-                        setChats(prev => [...prev, { id: Date.now(), title: message, messages: [{ role: 'user', content: message, chart: result.chart_data }] }]);
-                        if (result.chart_data) {
-                            updateChart(result.chart_data);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Erro ao enviar:', error);
-                    // Add error message to chat with retry button
-                    setChats(prev => [...prev, { id: Date.now(), title: message, messages: [{ role: 'system', content: `❌ ${error.message || 'Ocorreu um erro ao processar sua mensagem.'}\n\nClique aqui para tentar novamente.`, isError: true, originalMessage: message, onClick: () => {
-                        // Remove error message
-                        setChats(prev => prev.slice(0, -1));
-                        // Restore message and try again
-                        setNewMessage(message);
-                        handleSendMessage();
-                    } }] }]);
+                    await api.sendMessage(user.username, chatId, currentMessage, filesData);
+                    await loadChats();
+                } catch (err) {
+                    handleError(err, 'handleSendMessage');
+                    // Restore message and files if send fails
+                    setNewMessage(currentMessage);
+                    setAttachedFiles(currentFiles);
                 } finally {
                     setLoading(false);
-                    scrollToBottom();
                 }
             };
             
             const handleFileSelect = (e) => {
-                const files = Array.from(e.target.files);
-                const newFiles = files.map(file => ({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    data: file
-                }));
-                setAttachedFiles([...attachedFiles, ...newFiles]);
-                e.target.value = '';
+                try {
+                    const files = Array.from(e.target.files);
+                    const newFiles = files.map(file => ({
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        data: file
+                    }));
+                    setAttachedFiles([...attachedFiles, ...newFiles]);
+                    e.target.value = '';
+                } catch (err) {
+                    handleError(err, 'handleFileSelect');
+                }
             };
             
             const removeFile = (index) => {
-                setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
+                try {
+                    setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
+                } catch (err) {
+                    handleError(err, 'removeFile');
+                }
             };
-            
-            const formatFileSize = (bytes) => {
-                if (bytes < 1024) return bytes + ' B';
-                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-            };
-            
-            useEffect(() => {
-                const handleResize = () => {
-                    setIsMobile(window.innerWidth <= 768);
-                };
-
-                window.addEventListener('resize', handleResize);
-                return () => window.removeEventListener('resize', handleResize);
-            }, []);
             
             if (!user) {
                 return <Login onLogin={handleLogin} />;
@@ -2007,6 +2033,12 @@
             
             return (
                 <div className="app">
+                    {error && (
+                        <div className="error-toast">
+                            {error}
+                        </div>
+                    )}
+                    
                     {isMobile && (
                         <button 
                             className="menu-toggle"
