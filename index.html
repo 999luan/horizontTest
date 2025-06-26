@@ -1118,7 +1118,9 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const useState = React.useState;
+        const useEffect = React.useEffect;
+        const useRef = React.useRef;
         
         // API Configuration
         const API_BASE = window.location.origin + '/api';
@@ -1327,14 +1329,14 @@
             },
             
             getChats: async (username) => {
-                const response = await fetch(`${API_BASE}/chats/${username}`);
+                const response = await fetch(API_BASE + '/chats/' + username);
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message);
                 return data.chats;
             },
             
             createChat: async (username, title = 'Nova Conversa') => {
-                const response = await fetch(`${API_BASE}/chats/${username}`, {
+                const response = await fetch(API_BASE + '/chats/' + username, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ title })
@@ -1345,7 +1347,7 @@
             },
             
             deleteChat: async (username, chatId) => {
-                const response = await fetch(`${API_BASE}/chats/${username}/${chatId}`, {
+                const response = await fetch(API_BASE + '/chats/' + username + '/' + chatId, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
@@ -1421,7 +1423,7 @@
             },
             
             deleteUser: async (username) => {
-                const response = await fetch(`${API_BASE}/admin/users/${username}`, {
+                const response = await fetch(API_BASE + '/admin/users/' + username, {
                     method: 'DELETE'
                 });
                 const data = await response.json();
@@ -1507,46 +1509,42 @@
             if (!isOpen) return null;
             
             const generatePDF = async () => {
-                try {
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF();
-                    
-                    // Header
-                    pdf.setFontSize(24);
-                    pdf.setTextColor(16, 163, 127);
-                    pdf.text('Horizont Investimentos', 105, 30, { align: 'center' });
-                    
-                    pdf.setFontSize(16);
-                    pdf.setTextColor(0, 0, 0);
-                    pdf.text('Proposta de Investimento', 105, 45, { align: 'center' });
-                    
-                    // Client info
-                    pdf.setFontSize(12);
-                    pdf.text(`Cliente: ${clientName || 'Cliente'}`, 20, 70);
-                    pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 80);
-                    
-                    // Extract calculations
-                    let yPos = 100;
-                    const messages = chatData && chatData.messages ? chatData.messages : [];
-                    
-                    messages.forEach(msg => {
-                        if (msg.role === 'assistant' && msg.content.includes('R$')) {
-                            const lines = pdf.splitTextToSize(msg.content.substring(0, 500), 170);
-                            lines.forEach(line => {
-                                if (yPos > 270) {
-                                    pdf.addPage();
-                                    yPos = 20;
-                                }
-                                pdf.text(line, 20, yPos);
-                                yPos += 7;
-                            });
-                        }
-                    });
-                    
-                    pdf.save(`proposta-horizont-${clientName || 'cliente'}.pdf`);
-                } catch (err) {
-                    alert('Erro ao gerar PDF');
-                }
+                const jsPDF = window.jspdf.jsPDF;
+                const pdf = new jsPDF();
+                
+                // Header
+                pdf.setFontSize(24);
+                pdf.setTextColor(16, 163, 127);
+                pdf.text('Horizont Investimentos', 105, 30, { align: 'center' });
+                
+                pdf.setFontSize(16);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text('Proposta de Investimento', 105, 45, { align: 'center' });
+                
+                // Client info
+                pdf.setFontSize(12);
+                pdf.text(`Cliente: ${clientName || 'Cliente'}`, 20, 70);
+                pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 80);
+                
+                // Extract calculations
+                let yPos = 100;
+                const messages = chatData && chatData.messages ? chatData.messages : [];
+                
+                messages.forEach(msg => {
+                    if (msg.role === 'assistant' && msg.content.includes('R$')) {
+                        const lines = pdf.splitTextToSize(msg.content.substring(0, 500), 170);
+                        lines.forEach(line => {
+                            if (yPos > 270) {
+                                pdf.addPage();
+                                yPos = 20;
+                            }
+                            pdf.text(line, 20, yPos);
+                            yPos += 7;
+                        });
+                    }
+                });
+                
+                pdf.save(`proposta-horizont-${clientName || 'cliente'}.pdf`);
             };
             
             const shareWhatsApp = () => {
@@ -1700,14 +1698,14 @@
                             className="user-input"
                             placeholder="Nome de usuário"
                             value={newUser.username}
-                            onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+                            onChange={(e) => setNewUser(Object.assign({}, newUser, { username: e.target.value }))}
                         />
                         <input
                             type="password"
                             className="user-input"
                             placeholder="Senha"
                             value={newUser.password}
-                            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                            onChange={(e) => setNewUser(Object.assign({}, newUser, { password: e.target.value }))}
                         />
                         <button 
                             className="create-user-btn"
@@ -1928,7 +1926,7 @@
             const handleNewChat = async () => {
                 try {
                     const newChat = await api.createChat(username);
-                    setChats([newChat, ...chats]);
+                    setChats([newChat].concat(chats));
                     setCurrentChat(newChat);
                     setMessages([]);
                     setIsSidebarOpen(false); // Fechar sidebar no mobile após criar chat
@@ -1975,7 +1973,7 @@
                         role: 'user',
                         content: newMessage
                     };
-                    setMessages(prev => [...prev, userMessage]);
+                    setMessages(prev => prev.concat([userMessage]));
                     setNewMessage('');
 
                     // Enviar mensagem para o servidor
@@ -1992,7 +1990,7 @@
                             role: 'assistant',
                             content: response.message
                         };
-                        setMessages(prev => [...prev, assistantMessage]);
+                        setMessages(prev => prev.concat([assistantMessage]));
                     }
 
                     // Limpar arquivos selecionados
@@ -2037,11 +2035,11 @@
                         messages.map((msg, index) =>
                             React.createElement('div', {
                                 key: index,
-                                className: `message ${msg.role}`
+                                className: 'message ' + msg.role
                             }, [
                                 React.createElement('div', {
                                     key: 'avatar',
-                                    className: `avatar ${msg.role}-avatar`
+                                    className: 'avatar ' + (msg.role === 'user' ? 'user-avatar' : 'assistant-avatar')
                                 }),
                                 React.createElement('div', {
                                     key: 'content',
@@ -2199,7 +2197,7 @@
                     }, chats.map(chat =>
                         React.createElement('div', {
                             key: chat.id,
-                            className: `chat-item ${(currentChat && currentChat.id === chat.id) ? 'active' : ''}`,
+                            className: 'chat-item' + ((currentChat && currentChat.id === chat.id) ? ' active' : ''),
                             onClick: () => handleSelectChat(chat)
                         }, [
                             React.createElement('span', {
@@ -2223,21 +2221,21 @@
                 // Menu toggle button for mobile
                 React.createElement('button', {
                     key: 'menu-toggle',
-                    className: `menu-toggle ${isSidebarOpen ? 'open' : ''}`,
+                    className: 'menu-toggle' + (isSidebarOpen ? ' open' : ''),
                     onClick: toggleSidebar
                 }, '☰'),
                 
                 // Sidebar overlay
                 React.createElement('div', {
                     key: 'sidebar-overlay',
-                    className: `sidebar-overlay ${isSidebarOpen ? 'show' : ''}`,
+                    className: 'sidebar-overlay' + (isSidebarOpen ? ' show' : ''),
                     onClick: () => setIsSidebarOpen(false)
                 }),
                 
                 // Sidebar
                 React.createElement('div', {
                     key: 'sidebar',
-                    className: `sidebar ${isSidebarOpen ? 'open' : ''}`
+                    className: 'sidebar' + (isSidebarOpen ? ' open' : '')
                 }, renderSidebar()),
                 
                 // Main content
