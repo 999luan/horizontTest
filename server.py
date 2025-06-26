@@ -25,6 +25,7 @@ from database import (
 )
 from setup_db import setup_database
 
+# Carrega variáveis de ambiente
 load_dotenv()
 
 # Configurar logging
@@ -33,6 +34,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+logger.info("Variáveis de ambiente carregadas")
 
 app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
