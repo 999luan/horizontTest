@@ -39,14 +39,15 @@ CORS(app)
 
 # Cliente Anthropic
 api_key = os.getenv('ANTHROPIC_API_KEY')
+logger.info("Verificando variáveis de ambiente:")
+logger.info(f"ANTHROPIC_API_KEY está definida? {'Sim' if api_key else 'Não'}")
+
 if not api_key:
     logger.error("ANTHROPIC_API_KEY não está configurada!")
     raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
-# Log para debug da chave (apenas os primeiros/últimos caracteres)
-key_start = api_key[:7] if len(api_key) > 7 else api_key
-key_end = api_key[-4:] if len(api_key) > 4 else ""
-logger.info(f"ANTHROPIC_API_KEY encontrada. Começa com: {key_start}, Termina com: {key_end}, Tamanho: {len(api_key)}")
+logger.info(f"Comprimento da API key: {len(api_key)}")
+logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
 
 logger.info("Inicializando cliente do Claude...")
 try:
