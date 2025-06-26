@@ -1549,7 +1549,7 @@
                         chartInstanceRef.current.destroy();
                     }
                 };
-            }, [data]);
+            }, [data.years, data.products, data.initialValue, data.title]);
 
             return React.createElement('div', {
                 className: 'chart-wrapper',
