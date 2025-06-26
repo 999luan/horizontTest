@@ -398,16 +398,29 @@ def delete_existing_user(username):
         logger.error(f"Erro ao deletar usuário: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
-@app.route('/api/admin/config/prompt', methods=['GET'])
-def get_prompt_config():
+@app.route('/api/config/prompt', methods=['GET'])
+def get_public_prompt():
+    """Endpoint público para visualizar o prompt atual"""
     try:
-        logger.info("Buscando configuração do prompt")
+        logger.info("Buscando prompt público")
         prompt_content = get_prompt()
         if prompt_content:
             return jsonify({"success": True, "prompt": prompt_content})
         return jsonify({"success": False, "message": "No prompt configured"}), 404
     except Exception as e:
-        logger.error(f"Erro ao buscar prompt: {e}")
+        logger.error(f"Erro ao buscar prompt público: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/api/admin/config/prompt', methods=['GET'])
+def get_prompt_config():
+    try:
+        logger.info("Buscando configuração do prompt (admin)")
+        prompt_content = get_prompt()
+        if prompt_content:
+            return jsonify({"success": True, "prompt": prompt_content})
+        return jsonify({"success": False, "message": "No prompt configured"}), 404
+    except Exception as e:
+        logger.error(f"Erro ao buscar prompt admin: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/admin/config/prompt', methods=['PUT'])
