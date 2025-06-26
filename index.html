@@ -1647,7 +1647,9 @@
             },
             
             getPrompt: async () => {
-                const response = await fetch(`${API_BASE}/admin/config/prompt`);
+                // Usar endpoint público para usuários normais, admin para admins
+                const endpoint = isAdmin ? '/admin/config/prompt' : '/config/prompt';
+                const response = await fetch(`${API_BASE}${endpoint}`);
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message);
                 return data.prompt;
