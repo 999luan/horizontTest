@@ -37,7 +37,9 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
 # Cliente Anthropic
-client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+client = anthropic.Anthropic(
+    api_key=os.getenv('ANTHROPIC_API_KEY')
+)
 
 def extract_pdf_text(file_data):
     try:
