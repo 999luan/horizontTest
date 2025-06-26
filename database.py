@@ -82,21 +82,29 @@ def get_all_users():
 def create_user(username, password, role='user'):
     connection = get_db_connection()
     if connection is None:
+        print("Erro: Não foi possível obter conexão com o banco")
         return False
     
     try:
         cursor = connection.cursor()
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         
+        print(f"Tentando criar usuário: {username} com role: {role}")
         cursor.execute("""
             INSERT INTO users (username, password_hash, role)
             VALUES (%s, %s, %s)
         """, (username, password_hash.decode('utf-8'), role))
         
         connection.commit()
+        print(f"Usuário {username} criado com sucesso!")
         return True
     except Error as e:
-        print(f"Erro ao criar usuário: {e}")
+        print(f"Erro detalhado ao criar usuário: {str(e)}")
+        if "Duplicate entry" in str(e):
+            print("Erro: Username já existe")
+        return False
+    except Exception as e:
+        print(f"Erro inesperado ao criar usuário: {str(e)}")
         return False
     finally:
         cursor.close()
@@ -192,19 +200,33 @@ def create_chat(username, title):
         connection.close()
 
 def add_message_to_chat(chat_id, role, content):
+    print(f"Tentando adicionar mensagem ao chat {chat_id}")
+    print(f"Role: {role}")
+    print(f"Content length: {len(content) if content else 0}")
+    
     connection = get_db_connection()
     if connection is None:
+        print("Erro: Não foi possível obter conexão com o banco")
         return False
     
     try:
         cursor = connection.cursor()
         
+        # Verificar se o chat existe
+        cursor.execute("SELECT id FROM chats WHERE id = %s", (chat_id,))
+        chat = cursor.fetchone()
+        if not chat:
+            print(f"Erro: Chat {chat_id} não encontrado")
+            return False
+        
+        print("Chat encontrado, adicionando mensagem...")
         # Adicionar mensagem ao histórico do chat
         cursor.execute("""
             INSERT INTO chat_messages (chat_id, role, content)
             VALUES (%s, %s, %s)
         """, (chat_id, role, content))
         
+        print("Mensagem adicionada, atualizando contexto...")
         # Atualizar o contexto do chat
         cursor.execute("""
             UPDATE chats 
@@ -218,9 +240,13 @@ def add_message_to_chat(chat_id, role, content):
         """, (json.dumps({'role': role, 'content': content}), chat_id))
         
         connection.commit()
+        print("Mensagem salva com sucesso!")
         return True
     except Error as e:
-        print(f"Erro ao adicionar mensagem: {e}")
+        print(f"Erro MySQL ao adicionar mensagem: {str(e)}")
+        return False
+    except Exception as e:
+        print(f"Erro inesperado ao adicionar mensagem: {str(e)}")
         return False
     finally:
         cursor.close()
