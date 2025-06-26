@@ -29,29 +29,45 @@
     <!-- Outras dependências -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-        /* Reset e variáveis */
+        /* Variáveis CSS Globais */
         :root {
-            --background-color: #1a1a1a;
-            --surface-color: #2a2a2a;
-            --surface-hover: #333333;
+            /* Cores */
+            --primary-color: #10a37f;
+            --primary-hover: #0d8a6c;
+            --surface-color: #1a1a1a;
+            --surface-hover: #2a2a2a;
+            --background-color: #0f0f0f;
             --text-color: #ffffff;
-            --text-secondary: #b3b3b3;
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --border-color: #404040;
+            --text-secondary: #a0a0a0;
+            --border-color: #333333;
             --danger-color: #dc2626;
             --success-color: #059669;
-            --border-radius: 6px;
-            --shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+            /* Espaçamento */
             --spacing-xs: 4px;
             --spacing-sm: 8px;
             --spacing-md: 16px;
             --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            /* Bordas */
+            --border-radius: 8px;
+            --border-radius-lg: 12px;
+
+            /* Sombras */
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+            /* Transições */
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
         }
 
-        /* Reset básico */
+        /* Reset e Estilos Base */
         * {
             margin: 0;
             padding: 0;
@@ -76,6 +92,12 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
+        }
+
+        .app.login-mode {
+            display: block;
+            height: 100vh;
+            overflow-y: auto;
         }
 
         /* Login */
@@ -1770,38 +1792,38 @@
             );
         };
         
-        // Presentation Modal
+        // Presentation Modal Component
         const PresentationModal = function(props) {
             const isOpen = props.isOpen;
             const onClose = props.onClose;
             const chatData = props.chatData;
             const username = props.username;
             const [clientName, setClientName] = useState('');
-            
+
             if (!isOpen) return null;
-            
+
             const generatePDF = async () => {
                 const jsPDF = window.jspdf.jsPDF;
                 const pdf = new jsPDF();
-                
+
                 // Header
                 pdf.setFontSize(24);
                 pdf.setTextColor(16, 163, 127);
                 pdf.text('Horizont Investimentos', 105, 30, { align: 'center' });
-                
+
                 pdf.setFontSize(16);
                 pdf.setTextColor(0, 0, 0);
                 pdf.text('Proposta de Investimento', 105, 45, { align: 'center' });
-                
+
                 // Client info
                 pdf.setFontSize(12);
                 pdf.text(`Cliente: ${clientName || 'Cliente'}`, 20, 70);
                 pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 20, 80);
-                
+
                 // Extract calculations
                 let yPos = 100;
                 const messages = chatData && chatData.messages ? chatData.messages : [];
-                
+
                 messages.forEach(msg => {
                     if (msg.role === 'assistant' && msg.content.includes('R$')) {
                         const lines = pdf.splitTextToSize(msg.content.substring(0, 500), 170);
@@ -1815,15 +1837,15 @@
                         });
                     }
                 });
-                
+
                 pdf.save(`proposta-horizont-${clientName || 'cliente'}.pdf`);
             };
-            
+
             const shareWhatsApp = () => {
                 const messages = chatData && chatData.messages ? chatData.messages : [];
                 let summary = `🏢 *Horizont Investimentos*\n\n`;
                 summary += `📊 Proposta para ${clientName || 'Cliente'}\n\n`;
-                
+
                 // Extract key numbers
                 for (const msg of messages) {
                     if (msg.role === 'assistant') {
@@ -1833,43 +1855,63 @@
                             matches.slice(0, 5).forEach(match => {
                                 summary += `• ${match}\n`;
                             });
-                            break; // Now break works with for...of
+                            break;
                         }
                     }
                 }
-                
+
                 summary += `\n📱 Gerado pelo Horizont IA`;
-                
+
                 const url = `https://wa.me/?text=${encodeURIComponent(summary)}`;
                 window.open(url, '_blank');
             };
-            
-            return (
-                <div className="modal-overlay" onClick={onClose}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h2 className="modal-title">Gerar Proposta</h2>
-                            <button className="modal-close" onClick={onClose}>✕</button>
-                        </div>
-                        
-                        <input
-                            type="text"
-                            className="modal-input"
-                            placeholder="Nome do cliente"
-                            value={clientName}
-                            onChange={(e) => setClientName(e.target.value)}
-                        />
-                        
-                        <div className="modal-actions">
-                            <button className="modal-btn" onClick={generatePDF}>
-                                📄 Gerar PDF
-                            </button>
-                            <button className="modal-btn secondary" onClick={shareWhatsApp}>
-                                📱 Enviar WhatsApp
-                            </button>
-                        </div>
-                    </div>
-                </div>
+
+            return React.createElement('div', {
+                className: 'modal-overlay',
+                onClick: onClose
+            }, 
+                React.createElement('div', {
+                    className: 'modal-content',
+                    onClick: e => e.stopPropagation()
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        className: 'modal-header'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'modal-title'
+                        }, 'Gerar Proposta'),
+                        React.createElement('button', {
+                            key: 'close',
+                            className: 'modal-close',
+                            onClick: onClose
+                        }, '✕')
+                    ]),
+                    React.createElement('input', {
+                        key: 'client-name',
+                        type: 'text',
+                        className: 'modal-input',
+                        placeholder: 'Nome do cliente',
+                        value: clientName,
+                        onChange: (e) => setClientName(e.target.value)
+                    }),
+                    React.createElement('div', {
+                        key: 'actions',
+                        className: 'modal-actions'
+                    }, [
+                        React.createElement('button', {
+                            key: 'pdf',
+                            className: 'modal-btn',
+                            onClick: generatePDF
+                        }, '📄 Gerar PDF'),
+                        React.createElement('button', {
+                            key: 'whatsapp',
+                            className: 'modal-btn secondary',
+                            onClick: shareWhatsApp
+                        }, '📱 Enviar WhatsApp')
+                    ])
+                ])
             );
         };
         
