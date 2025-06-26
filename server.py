@@ -130,65 +130,36 @@ def parse_chart_from_response(text):
     """
     try:
         if not text:
-            logger.info("Nenhum texto para parsear dados do gráfico")
             return None
             
         # First try to find data between [GRAFICO_DADOS] tags
         start = text.find('[GRAFICO_DADOS]')
         end = text.find('[/GRAFICO_DADOS]')
         
-        logger.info(f"Procurando dados do gráfico - início: {start}, fim: {end}")
-        
         if start != -1 and end != -1 and end > start:
             chart_json = text[start + 14:end].strip()
-            logger.info(f"JSON do gráfico encontrado entre tags: {len(chart_json)} caracteres")
             
             try:
                 chart_data = json.loads(chart_json)
                 # Validate chart data structure
                 if not isinstance(chart_data, dict):
-                    logger.error("Dados do gráfico não são um objeto JSON válido")
                     return None
                     
                 required_fields = ['type', 'title', 'years', 'initialValue', 'products']
                 missing_fields = [field for field in required_fields if field not in chart_data]
                 if missing_fields:
-                    logger.error(f"Dados do gráfico faltando campos obrigatórios: {missing_fields}")
                     return None
                     
-                logger.info("Dados do gráfico parseados com sucesso")
                 return chart_data
-            except json.JSONDecodeError as e:
-                logger.error(f"Erro ao decodificar JSON do gráfico: {e}")
-                logger.error(f"JSON inválido: {chart_json[:200]}...")  # Log only first 200 chars
+            except json.JSONDecodeError:
                 return None
         
-        # If no tags found, try to find a JSON object in the text
-        import re
-        json_pattern = r'\{(?:[^{}]|(?R))*\}'  # Recursive pattern to match nested objects
-        matches = re.finditer(json_pattern, text)
-        
-        for match in matches:
-            try:
-                potential_json = match.group()
-                chart_data = json.loads(potential_json)
-                
-                # Validate if it looks like chart data
-                if isinstance(chart_data, dict) and all(key in chart_data for key in ['type', 'title', 'years', 'initialValue', 'products']):
-                    logger.info("Dados do gráfico encontrados em JSON inline")
-                    return chart_data
-            except (json.JSONDecodeError, re.error):
-                continue
-            
-        logger.info("Nenhum dado de gráfico encontrado no texto")
         return None
-    except Exception as e:
-        logger.error(f"Erro ao processar dados do gráfico: {str(e)}")
-        logger.error(f"Texto analisado: {text[:200]}...")  # Log only first 200 chars
+    except Exception:
         return None
 
 # Função para processar mensagem do Claude com timeout
-def process_claude_message(messages, max_retries=2):
+def process_claude_message(messages, max_retries=1):
     for attempt in range(max_retries):
         try:
             # Obter o prompt do sistema
@@ -220,19 +191,6 @@ def process_claude_message(messages, max_retries=2):
                 system=system_prompt,
                 temperature=temp
             )
-            
-            # Verificar se a resposta contém dados de gráfico
-            if response and response.content:
-                response_text = response.content[0].text
-                if "[GRAFICO_DADOS]" in response_text:
-                    # Validar dados do gráfico
-                    chart_data = parse_chart_from_response(response_text)
-                    if not chart_data:
-                        logger.warning("Dados do gráfico inválidos na resposta")
-                        # Tentar novamente com temperatura mais baixa
-                        if attempt < max_retries - 1:
-                            temp = 0.1
-                            continue
             
             return response
             
