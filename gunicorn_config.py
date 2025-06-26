@@ -9,7 +9,7 @@ bind = "0.0.0.0:10000"
 backlog = 2048
 
 # Worker processes
-workers = 2
+workers = 1
 worker_class = 'sync'
 threads = 4
 worker_connections = 1000
@@ -22,10 +22,10 @@ keepalive = 2
 # Logging
 accesslog = '-'
 errorlog = '-'
-loglevel = 'info'
+loglevel = 'debug'
 
 # Process naming
-proc_name = None
+proc_name = 'horizont'
 default_proc_name = 'gunicorn'
 
 # Server mechanics
@@ -45,9 +45,9 @@ capture_output = True
 enable_stdio_inheritance = True
 
 # Memory management
-max_requests = 100
-max_requests_jitter = 10
-worker_tmp_dir = "/dev/shm"  # Use shared memory for temp files
+max_requests = 50
+max_requests_jitter = 5
+worker_tmp_dir = "/tmp"
 
 # Prevent workers from hanging
 check_worker_timeout = 30  # Check worker health every 30 seconds
@@ -72,13 +72,13 @@ check_config = False
 
 # Server hooks
 def on_starting(server):
-    pass
+    server.log.info("server is starting")
 
 def on_reload(server):
     pass
 
 def when_ready(server):
-    pass
+    server.log.info("server is ready")
 
 def pre_fork(server, worker):
     pass
@@ -99,10 +99,14 @@ def child_exit(server, worker):
     pass
 
 def worker_abort(worker):
-    pass
+    worker.log.info("worker received SIGABRT signal")
 
 def on_exit(server):
     pass
+
+def worker_exit(server, worker):
+    """Log when worker exits"""
+    server.log.info("worker exited (pid: %s)", worker.pid)
 
 def worker_int(worker):
     """Log when worker receives INT or QUIT signal"""
@@ -115,8 +119,4 @@ def worker_int(worker):
             code.append('File: "%s", line %d, in %s' % (filename, lineno, name))
             if line:
                 code.append("  %s" % (line.strip()))
-    worker.log.debug("\n".join(code))
-
-def worker_exit(server, worker):
-    """Log when worker exits"""
-    server.log.info("worker exited (pid: %s)", worker.pid) 
+    worker.log.debug("\n".join(code)) 

@@ -281,10 +281,15 @@ def send_message():
         
         logger.info(f"[{request_id}] Processando mensagem para chat: {chat_id}")
         
-        # Adiciona mensagem do usuário
+        # Adiciona mensagem do usuário antes de qualquer processamento pesado
         if not add_message_to_chat(chat_id, 'user', message):
             logger.error(f"[{request_id}] Falha ao salvar mensagem do usuário")
             return jsonify({"success": False, "message": "Failed to save user message"}), 500
+            
+        # Check timeout antes de operações pesadas
+        if time.time() - start_time > 150:
+            logger.error(f"[{request_id}] Timeout antes de processar mensagem")
+            return jsonify({"success": False, "message": "Request timeout"}), 504
         
         # Obtém o prompt do banco de dados
         system_prompt = get_prompt()
@@ -298,172 +303,133 @@ def send_message():
             logger.error(f"[{request_id}] Falha ao obter histórico de mensagens")
             return jsonify({"success": False, "message": "Failed to get message history"}), 500
             
-        # Check timeout - Aumentado para acomodar cold start do Render
-        if time.time() - start_time > 150:  # 150 seconds timeout
-            logger.error(f"[{request_id}] Timeout ao processar mensagem")
-            return jsonify({"success": False, "message": "Request timeout"}), 504
-            
-        conversation = []
-        for msg in messages:
-            if isinstance(msg, dict):
-                conversation.append({
-                    "role": str(msg.get('role', '')),
-                    "content": str(msg.get('content', ''))
-                })
+        # Prepara as mensagens para o Claude com limite de histórico
+        messages_for_claude = []
+        for msg in messages[-5:]:  # Limita a 5 mensagens mais recentes
+            if not isinstance(msg, dict) or 'role' not in msg or 'content' not in msg:
+                continue
+                
+            role = "assistant" if msg["role"] == "assistant" else "user"
+            content = msg["content"]
+            if not content:  # Skip empty messages
+                continue
+                
+            messages_for_claude.append({
+                "role": role,
+                "content": content
+            })
         
-        # Envia para o Claude
-        logger.info(f"[{request_id}] Enviando mensagem para o Claude")
+        logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
+        
         try:
-            # Check timeout again before calling Claude
-            if time.time() - start_time > 90:
-                logger.error(f"[{request_id}] Timeout antes de chamar Claude")
+            # Set a timeout for Claude API call
+            response = client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=4096,
+                messages=messages_for_claude,
+                system=str(system_prompt),
+                timeout=90  # Aumentado para 90 segundos
+            )
+            logger.info(f"[{request_id}] Resposta recebida do Claude")
+            
+            # Check timeout after Claude response
+            if time.time() - start_time > 150:
+                logger.error(f"[{request_id}] Timeout após resposta do Claude")
                 return jsonify({"success": False, "message": "Request timeout"}), 504
             
-            # Prepara as mensagens para o Claude
-            messages_for_claude = []
-            
-            # Adiciona o histórico da conversa
-            for msg in conversation:
-                if not isinstance(msg, dict) or 'role' not in msg or 'content' not in msg:
-                    continue
-                    
-                role = "assistant" if msg["role"] == "assistant" else "user"
-                content = msg["content"]
-                if not content:  # Skip empty messages
-                    continue
-                    
-                messages_for_claude.append({
-                    "role": role,
-                    "content": content
-                })
-            
-            logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
-            
-            try:
-                # Set a timeout for Claude API call
-                response = client.messages.create(
-                    model="claude-3-opus-20240229",
-                    max_tokens=4096,
-                    messages=messages_for_claude,
-                    system=str(system_prompt),
-                    timeout=60  # 60 seconds timeout for Claude API
-                )
-                logger.info(f"[{request_id}] Resposta recebida do Claude")
+            # Extract text from response
+            if not response:
+                logger.error(f"[{request_id}] Resposta do Claude está vazia")
+                return jsonify({"success": False, "message": "Empty response from Claude"}), 500
                 
-                # Check timeout after Claude response
-                if time.time() - start_time > 90:
-                    logger.error(f"[{request_id}] Timeout após resposta do Claude")
+            if not hasattr(response, 'content'):
+                logger.error(f"[{request_id}] Resposta do Claude não contém conteúdo")
+                return jsonify({"success": False, "message": "Response from Claude has no content"}), 500
+                
+            # For Claude-3, content is a list of content blocks
+            content = response.content
+            logger.info(f"[{request_id}] Tipo do conteúdo da resposta: {type(content)}")
+            
+            if not isinstance(content, list):
+                logger.error(f"[{request_id}] Conteúdo da resposta do Claude não é uma lista")
+                return jsonify({"success": False, "message": "Invalid response format from Claude"}), 500
+                
+            # Combine all text blocks with memory optimization
+            response_text = ""
+            chart_data = None
+            
+            for block in content:
+                # Check timeout during response processing
+                if time.time() - start_time > 150:
+                    logger.error(f"[{request_id}] Timeout durante processamento da resposta")
                     return jsonify({"success": False, "message": "Request timeout"}), 504
-                
-                # Extract text from response
-                if not response:
-                    logger.error(f"[{request_id}] Resposta do Claude está vazia")
-                    return jsonify({"success": False, "message": "Empty response from Claude"}), 500
                     
-                if not hasattr(response, 'content'):
-                    logger.error(f"[{request_id}] Resposta do Claude não contém conteúdo")
-                    return jsonify({"success": False, "message": "Response from Claude has no content"}), 500
-                    
-                # For Claude-3, content is a list of content blocks
-                content = response.content
-                logger.info(f"[{request_id}] Tipo do conteúdo da resposta: {type(content)}")
+                logger.debug(f"[{request_id}] Processando bloco: {block}")
                 
-                if not isinstance(content, list):
-                    logger.error(f"[{request_id}] Conteúdo da resposta do Claude não é uma lista")
-                    return jsonify({"success": False, "message": "Invalid response format from Claude"}), 500
-                    
-                # Combine all text blocks
-                response_text = ""
-                chart_data = None
-                
-                for block in content:
-                    # Check timeout during response processing
-                    if time.time() - start_time > 90:
-                        logger.error(f"[{request_id}] Timeout durante processamento da resposta")
-                        return jsonify({"success": False, "message": "Request timeout"}), 504
+                # Handle block based on its type
+                if hasattr(block, 'type'):
+                    if block.type == 'text':
+                        text = block.text if hasattr(block, 'text') else str(block)
+                        # Replace literal \n with actual newlines
+                        text = text.replace('\\\\n', '\n').replace('\\n', '\n')
+                        response_text += text
                         
-                    logger.info(f"[{request_id}] Processando bloco: {block}")
-                    
-                    # Handle block based on its type
-                    if hasattr(block, 'type'):
-                        if block.type == 'text':
-                            text = block.text if hasattr(block, 'text') else str(block)
-                            # Replace literal \n with actual newlines
-                            text = text.replace('\\\\n', '\n')
-                            text = text.replace('\\n', '\n')
-                            response_text += text
-                            
-                            # Check for chart data in this block
+                        # Check for chart data in this block
+                        if '[GRAFICO_DADOS]' in text:
                             try:
                                 chart_data = parse_chart_from_response(text)
                                 if chart_data:
                                     logger.info(f"[{request_id}] Dados do gráfico encontrados no bloco")
-                                    break  # Found chart data, no need to continue parsing
                             except Exception as e:
                                 logger.error(f"[{request_id}] Erro ao processar dados do gráfico no bloco: {e}")
-                                continue
-                    else:
-                        # Fallback for string representation
-                        logger.warning(f"[{request_id}] Bloco sem tipo definido, usando representação string")
-                        block_str = str(block)
-                        if 'text=' in block_str:
-                            text_start = block_str.find("text='") + 6
-                            text_end = block_str.find("'", text_start)
-                            if text_start > 5 and text_end > text_start:
-                                text = block_str[text_start:text_end]
-                                text = text.replace('\\\\n', '\n')
-                                text = text.replace('\\n', '\n')
-                                response_text += text
-                                
-                                try:
-                                    chart_data = parse_chart_from_response(text)
-                                    if chart_data:
-                                        logger.info(f"[{request_id}] Dados do gráfico encontrados no bloco")
-                                        break
-                                except Exception as e:
-                                    logger.error(f"[{request_id}] Erro ao processar dados do gráfico no bloco: {e}")
-                                    continue
-                        
-                if not response_text:
-                    logger.error(f"[{request_id}] Texto da resposta do Claude está vazio")
-                    return jsonify({"success": False, "message": "Empty text in Claude response"}), 500
-                    
-                logger.info(f"[{request_id}] Resposta do Claude processada: {len(response_text)} caracteres")
+                else:
+                    # Fallback for string representation
+                    logger.warning(f"[{request_id}] Bloco sem tipo definido, usando representação string")
+                    block_str = str(block)
+                    if 'text=' in block_str:
+                        text_start = block_str.find("text='") + 6
+                        text_end = block_str.find("'", text_start)
+                        if text_start > 5 and text_end > text_start:
+                            text = block_str[text_start:text_end]
+                            text = text.replace('\\\\n', '\n').replace('\\n', '\n')
+                            response_text += text
                 
-                # Check timeout before saving response
-                if time.time() - start_time > 90:
-                    logger.error(f"[{request_id}] Timeout antes de salvar resposta")
-                    return jsonify({"success": False, "message": "Request timeout"}), 504
+            if not response_text:
+                logger.error(f"[{request_id}] Texto da resposta do Claude está vazio")
+                return jsonify({"success": False, "message": "Empty text in Claude response"}), 500
                 
-                # Salva resposta do assistente
-                if not add_message_to_chat(chat_id, 'assistant', response_text):
-                    logger.error(f"[{request_id}] Falha ao salvar resposta do assistente")
-                    return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
-                
-                logger.info(f"[{request_id}] Mensagem processada com sucesso em {time.time() - start_time:.2f} segundos")
-                
-                return jsonify({
-                    "success": True,
-                    "response": response_text,
-                    "chart_data": chart_data
-                })
-                    
-            except anthropic.AuthenticationError as e:
-                error_msg = str(e)
-                logger.error(f"[{request_id}] Erro de autenticação na API do Claude: {error_msg}")
-                return jsonify({"success": False, "message": "Authentication error with Claude API"}), 401
-            except anthropic.APIError as e:
-                error_msg = str(e)
-                logger.error(f"[{request_id}] Erro na API do Claude: {error_msg}")
-                return jsonify({"success": False, "message": f"Claude API error: {error_msg}"}), 500
-            except Exception as e:
-                logger.error(f"[{request_id}] Erro inesperado na chamada do Claude: {str(e)}")
-                return jsonify({"success": False, "message": "Unexpected error communicating with Claude"}), 500
+            logger.info(f"[{request_id}] Resposta do Claude processada: {len(response_text)} caracteres")
             
+            # Check timeout before saving response
+            if time.time() - start_time > 150:
+                logger.error(f"[{request_id}] Timeout antes de salvar resposta")
+                return jsonify({"success": False, "message": "Request timeout"}), 504
+            
+            # Salva resposta do assistente
+            if not add_message_to_chat(chat_id, 'assistant', response_text):
+                logger.error(f"[{request_id}] Falha ao salvar resposta do assistente")
+                return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
+            
+            logger.info(f"[{request_id}] Mensagem processada com sucesso em {time.time() - start_time:.2f} segundos")
+            
+            return jsonify({
+                "success": True,
+                "response": response_text,
+                "chart_data": chart_data
+            })
+                
+        except anthropic.AuthenticationError as e:
+            error_msg = str(e)
+            logger.error(f"[{request_id}] Erro de autenticação na API do Claude: {error_msg}")
+            return jsonify({"success": False, "message": "Authentication error with Claude API"}), 401
+        except anthropic.APIError as e:
+            error_msg = str(e)
+            logger.error(f"[{request_id}] Erro na API do Claude: {error_msg}")
+            return jsonify({"success": False, "message": f"Claude API error: {error_msg}"}), 500
         except Exception as e:
-            logger.error(f"[{request_id}] Erro ao processar mensagem: {str(e)}")
-            return jsonify({"success": False, "message": "Error processing message"}), 500
-        
+            logger.error(f"[{request_id}] Erro inesperado na chamada do Claude: {str(e)}")
+            return jsonify({"success": False, "message": "Unexpected error communicating with Claude"}), 500
+            
     except Exception as e:
         logger.error(f"[{request_id}] Erro ao processar requisição: {str(e)}")
         return jsonify({"success": False, "message": "Error processing request"}), 500
