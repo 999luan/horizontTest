@@ -310,12 +310,16 @@ def message():
         messages = []
         if chat_id:
             chat_messages = get_chat_messages(chat_id)
-            messages = [{"role": msg["role"], "content": msg["content"]} for msg in chat_messages]
+            # Só incluir mensagens se não for um reset de contexto
+            if chat_messages and len(chat_messages) > 0:
+                messages = [{"role": msg["role"], "content": msg["content"]} for msg in chat_messages]
         
         # Adicionar nova mensagem
         messages.append({"role": "user", "content": message_content})
         
         logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages)} mensagens")
+        if len(messages) == 1:
+            logger.info("[{request_id}] Contexto limpo - apenas mensagem atual")
 
         try:
             # Processar mensagem com retry e timeout

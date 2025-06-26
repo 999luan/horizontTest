@@ -341,12 +341,44 @@
         }
 
         .attach-button {
-            background: var(--surface-color);
-            padding: 8px;
+            background-color: var(--surface-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
         }
 
         .attach-button:hover:not(:disabled) {
             background: var(--surface-hover);
+        }
+
+        .clear-context-btn {
+            background-color: var(--warning-color);
+            color: white;
+            border: 1px solid var(--warning-color);
+        }
+
+        .clear-context-btn:hover {
+            background-color: #d97706;
+        }
+
+        .send-button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Ajuste no container principal */
@@ -2199,6 +2231,26 @@
                 setIsSidebarOpen(false); // Fechar sidebar no mobile após selecionar chat
             };
 
+            // Clear chat context
+            const handleClearContext = async () => {
+                if (!currentChat) return;
+                
+                if (confirm('Limpar o contexto do chat? Isso fará o assistente "esquecer" as mensagens anteriores, mas manterá o histórico visível.')) {
+                    try {
+                        // Limpar mensagens localmente
+                        setMessages([]);
+                        
+                        // Opcional: Limpar contexto no banco (manter histórico visível)
+                        // await api.clearChatContext(username, currentChat.id);
+                        
+                        setError(null);
+                    } catch (error) {
+                        console.error('Erro ao limpar contexto:', error);
+                        setError('Erro ao limpar contexto do chat');
+                    }
+                }
+            };
+
             // Send message
             const handleSendMessage = async () => {
                 if (!newMessage.trim() && selectedFiles.length === 0) return;
@@ -2411,6 +2463,13 @@
                                     },
                                     disabled: isLoading || !currentChat
                                 }, '📎'),
+                                React.createElement('button', {
+                                    key: 'clear-context',
+                                    className: 'button clear-context-btn',
+                                    onClick: handleClearContext,
+                                    disabled: isLoading || !currentChat,
+                                    title: 'Limpar contexto (manter histórico)'
+                                }, '🧹'),
                                 React.createElement('button', {
                                     key: 'send-button',
                                     className: 'button send-button',
