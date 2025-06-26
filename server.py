@@ -21,7 +21,8 @@ from database import (
     get_chat_messages,
     delete_chat,
     get_prompt,
-    update_prompt
+    update_prompt,
+    get_db_connection
 )
 from setup_db import setup_database
 import time
@@ -117,6 +118,14 @@ def extract_pdf_text(file_data):
         return None
 
 def parse_chart_from_response(text):
+    """Parse chart data from Claude's response text.
+    
+    Args:
+        text (str): The text to parse
+        
+    Returns:
+        dict or None: The parsed chart data or None if no valid data found
+    """
     try:
         if not text:
             logger.info("Nenhum texto para parsear dados do gráfico")
@@ -128,22 +137,33 @@ def parse_chart_from_response(text):
         
         logger.info(f"Procurando dados do gráfico - início: {start}, fim: {end}")
         
-        if start != -1 and end != -1:
+        if start != -1 and end != -1 and end > start:
             chart_json = text[start + 14:end].strip()
-            logger.info(f"JSON do gráfico encontrado: {chart_json}")
+            logger.info(f"JSON do gráfico encontrado entre tags: {len(chart_json)} caracteres")
             
             try:
                 chart_data = json.loads(chart_json)
+                # Validate chart data structure
+                if not isinstance(chart_data, dict):
+                    logger.error("Dados do gráfico não são um objeto JSON válido")
+                    return None
+                    
+                required_fields = ['type', 'title', 'years', 'initialValue', 'products']
+                missing_fields = [field for field in required_fields if field not in chart_data]
+                if missing_fields:
+                    logger.error(f"Dados do gráfico faltando campos obrigatórios: {missing_fields}")
+                    return None
+                    
                 logger.info("Dados do gráfico parseados com sucesso")
                 return chart_data
             except json.JSONDecodeError as e:
                 logger.error(f"Erro ao decodificar JSON do gráfico: {e}")
-                logger.error(f"JSON inválido: {chart_json}")
+                logger.error(f"JSON inválido: {chart_json[:200]}...")  # Log only first 200 chars
                 return None
         
         # If no tags found, try to find a JSON object in the text
         import re
-        json_pattern = r'\{[^{}]*\}'
+        json_pattern = r'\{(?:[^{}]|(?R))*\}'  # Recursive pattern to match nested objects
         matches = re.finditer(json_pattern, text)
         
         for match in matches:
@@ -152,17 +172,17 @@ def parse_chart_from_response(text):
                 chart_data = json.loads(potential_json)
                 
                 # Validate if it looks like chart data
-                if isinstance(chart_data, dict) and ('products' in chart_data or 'initialValue' in chart_data):
+                if isinstance(chart_data, dict) and all(key in chart_data for key in ['type', 'title', 'years', 'initialValue', 'products']):
                     logger.info("Dados do gráfico encontrados em JSON inline")
                     return chart_data
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, re.error):
                 continue
             
         logger.info("Nenhum dado de gráfico encontrado no texto")
         return None
     except Exception as e:
-        logger.error(f"Erro ao parsear dados do gráfico: {e}")
-        logger.error(f"Texto completo: {text[:200]}...")  # Log apenas os primeiros 200 caracteres
+        logger.error(f"Erro ao processar dados do gráfico: {str(e)}")
+        logger.error(f"Texto analisado: {text[:200]}...")  # Log only first 200 chars
         return None
 
 @app.route('/')
@@ -245,6 +265,11 @@ def send_message():
     logger.info(f"[{request_id}] Iniciando processamento de mensagem")
     
     try:
+        # Log para identificar possível cold start do Render
+        initial_processing_time = time.time() - start_time
+        if initial_processing_time > 5:  # Se demorou mais de 5 segundos para começar, provavelmente é cold start
+            logger.warning(f"[{request_id}] Possível cold start detectado - Tempo inicial: {initial_processing_time:.2f}s")
+        
         data = request.get_json() or {}
         chat_id = data.get('chatId', '')
         message = data.get('message', '')
@@ -273,8 +298,8 @@ def send_message():
             logger.error(f"[{request_id}] Falha ao obter histórico de mensagens")
             return jsonify({"success": False, "message": "Failed to get message history"}), 500
             
-        # Check timeout
-        if time.time() - start_time > 90:  # 90 seconds timeout
+        # Check timeout - Aumentado para acomodar cold start do Render
+        if time.time() - start_time > 150:  # 150 seconds timeout
             logger.error(f"[{request_id}] Timeout ao processar mensagem")
             return jsonify({"success": False, "message": "Request timeout"}), 504
             
@@ -358,17 +383,14 @@ def send_message():
                         return jsonify({"success": False, "message": "Request timeout"}), 504
                         
                     logger.info(f"[{request_id}] Processando bloco: {block}")
-                    # Extract text from the block's string representation
-                    block_str = str(block)
-                    if 'text=' in block_str:
-                        # Extract text between single quotes after 'text='
-                        text_start = block_str.find("text='") + 6
-                        text_end = block_str.find("'", text_start)
-                        if text_start > 5 and text_end > text_start:
-                            # Replace literal \n with actual newlines and add to response
-                            text = block_str[text_start:text_end]
-                            text = text.replace('\\\\n', '\n')  # Handle escaped newlines
-                            text = text.replace('\\n', '\n')    # Handle literal newlines
+                    
+                    # Handle block based on its type
+                    if hasattr(block, 'type'):
+                        if block.type == 'text':
+                            text = block.text if hasattr(block, 'text') else str(block)
+                            # Replace literal \n with actual newlines
+                            text = text.replace('\\\\n', '\n')
+                            text = text.replace('\\n', '\n')
                             response_text += text
                             
                             # Check for chart data in this block
@@ -380,6 +402,27 @@ def send_message():
                             except Exception as e:
                                 logger.error(f"[{request_id}] Erro ao processar dados do gráfico no bloco: {e}")
                                 continue
+                    else:
+                        # Fallback for string representation
+                        logger.warning(f"[{request_id}] Bloco sem tipo definido, usando representação string")
+                        block_str = str(block)
+                        if 'text=' in block_str:
+                            text_start = block_str.find("text='") + 6
+                            text_end = block_str.find("'", text_start)
+                            if text_start > 5 and text_end > text_start:
+                                text = block_str[text_start:text_end]
+                                text = text.replace('\\\\n', '\n')
+                                text = text.replace('\\n', '\n')
+                                response_text += text
+                                
+                                try:
+                                    chart_data = parse_chart_from_response(text)
+                                    if chart_data:
+                                        logger.info(f"[{request_id}] Dados do gráfico encontrados no bloco")
+                                        break
+                                except Exception as e:
+                                    logger.error(f"[{request_id}] Erro ao processar dados do gráfico no bloco: {e}")
+                                    continue
                         
                 if not response_text:
                     logger.error(f"[{request_id}] Texto da resposta do Claude está vazio")
@@ -496,6 +539,31 @@ def update_prompt_config():
     except Exception as e:
         logger.error(f"Erro ao atualizar prompt: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Render"""
+    try:
+        # Test database connection
+        connection = get_db_connection()
+        if connection is None:
+            return jsonify({"status": "error", "message": "Database connection failed"}), 500
+        connection.close()
+        
+        # Test Claude API
+        try:
+            client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=10,
+                messages=[{"role": "user", "content": "Hi"}],
+                timeout=5  # Short timeout for health check
+            )
+        except Exception as e:
+            return jsonify({"status": "error", "message": f"Claude API check failed: {str(e)}"}), 500
+        
+        return jsonify({"status": "healthy", "timestamp": datetime.now().isoformat()})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.before_request
 def before_request():

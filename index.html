@@ -887,6 +887,44 @@
                 flex-direction: column;
             }
         }
+
+        .message.system {
+            align-self: center;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            max-width: 70%;
+            opacity: 0.8;
+        }
+
+        .message.system.error {
+            background-color: rgba(220, 38, 38, 0.1);
+            border-color: var(--danger-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .message.system.error:hover {
+            background-color: rgba(220, 38, 38, 0.2);
+            opacity: 1;
+        }
+
+        .message.system .message-header {
+            color: var(--text-secondary);
+        }
+
+        .message.system.error .message-header {
+            color: var(--danger-color);
+        }
+
+        .system-avatar {
+            background-color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .error-avatar {
+            background-color: var(--danger-color);
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -959,8 +997,10 @@
                                     const errorJson = JSON.parse(errorText);
                                     errorMessage = errorJson.message || errorMessage;
                                 } catch (e) {
-                                    // If can't parse as JSON, use the raw text
-                                    errorMessage = errorText;
+                                    // If can't parse as JSON, use the raw text if it looks like text
+                                    if (errorText.length < 200 && !errorText.includes('<')) {
+                                        errorMessage = errorText;
+                                    }
                                 }
                             }
                         } catch (e) {
@@ -971,6 +1011,10 @@
                             errorMessage = 'O servidor está temporariamente indisponível. Por favor, tente novamente em alguns instantes.';
                         } else if (response.status === 504) {
                             errorMessage = 'A requisição demorou muito para responder. Por favor, tente novamente.';
+                        } else if (response.status === 413) {
+                            errorMessage = 'A mensagem é muito grande. Por favor, tente uma mensagem menor.';
+                        } else if (response.status === 429) {
+                            errorMessage = 'Muitas requisições. Por favor, aguarde um momento antes de tentar novamente.';
                         }
                         
                         throw new Error(`${errorMessage} (Status: ${response.status})`);
@@ -983,7 +1027,24 @@
                         if (!responseText) {
                             throw new Error('Resposta vazia do servidor');
                         }
-                        data = JSON.parse(responseText);
+                        
+                        // Try to clean the response if it has extra characters
+                        let cleanText = responseText.trim();
+                        // Remove any leading/trailing characters that would make it invalid JSON
+                        while (cleanText && !cleanText.startsWith('{')) {
+                            cleanText = cleanText.slice(1);
+                        }
+                        while (cleanText && !cleanText.endsWith('}')) {
+                            cleanText = cleanText.slice(0, -1);
+                        }
+                        
+                        try {
+                            data = JSON.parse(cleanText);
+                        } catch (e) {
+                            console.error('Erro no parsing JSON limpo:', e);
+                            // If clean parse fails, try original
+                            data = JSON.parse(responseText);
+                        }
                     } catch (e) {
                         console.error('Erro ao processar resposta:', e);
                         throw new Error('Não foi possível processar a resposta do servidor. Por favor, tente novamente.');
@@ -1793,46 +1854,44 @@
                 }
             };
             
-            const handleSendMessage = async () => {
-                if (!message.trim() && attachedFiles.length === 0) return;
-                if (activeChat === null || loading) return;
-                
-                const currentMessage = message;
-                const currentFiles = attachedFiles;
-                const chatId = chats[activeChat].id;
-                
-                setMessage('');
-                setAttachedFiles([]);
-                setLoading(true);
-                
+            const handleSendMessage = async function(event) {
+                if (event && event.key && event.key !== 'Enter') return;
+                if (!this.newMessage.trim()) return;
+
+                const message = this.newMessage.trim();
+                this.newMessage = '';
+                this.messages.push({ role: 'user', content: message });
+                this.scrollToBottom();
+
                 try {
-                    // Convert files to base64
-                    const filesData = await Promise.all(
-                        currentFiles.map(file => {
-                            return new Promise((resolve) => {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                    resolve({
-                                        name: file.name,
-                                        type: file.type,
-                                        size: file.size,
-                                        data: reader.result.split(',')[1]
-                                    });
-                                };
-                                reader.readAsDataURL(file.data);
-                            });
-                        })
-                    );
+                    this.loading = true;
+                    const result = await this.sendMessage(this.username, this.chatId, message);
                     
-                    const result = await api.sendMessage(user.username, chatId, currentMessage, filesData);
-                    await loadChats();
-                } catch (err) {
-                    console.error('Erro ao enviar:', err);
-                    alert('Erro ao enviar mensagem');
-                    setMessage(currentMessage);
-                    setAttachedFiles(currentFiles);
+                    if (result && result.response) {
+                        this.messages.push({ role: 'assistant', content: result.response });
+                        if (result.chart_data) {
+                            this.updateChart(result.chart_data);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao enviar:', error);
+                    // Add error message to chat with retry button
+                    this.messages.push({ 
+                        role: 'system', 
+                        content: `❌ ${error.message || 'Ocorreu um erro ao processar sua mensagem.'}\n\nClique aqui para tentar novamente.`,
+                        isError: true,
+                        originalMessage: message,
+                        onClick: () => {
+                            // Remove error message
+                            this.messages.pop();
+                            // Restore message and try again
+                            this.newMessage = message;
+                            this.handleSendMessage();
+                        }
+                    });
                 } finally {
-                    setLoading(false);
+                    this.loading = false;
+                    this.scrollToBottom();
                 }
             };
             

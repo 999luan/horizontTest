@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: horizont
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.12
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+    healthCheckPath: /health
+    autoDeploy: false
+    disk:
+      name: tmp
+      mountPath: /tmp
+      sizeGB: 0.5
+    scaling:
+      minInstances: 1
+      maxInstances: 1
+      targetMemoryPercent: 90
+      targetCPUPercent: 90 
