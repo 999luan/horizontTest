@@ -657,7 +657,7 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback } = React;
+        const { useState, useEffect, useRef } = React;
         
         // API Configuration
         const API_BASE = 'http://localhost:8000/api';
@@ -1392,6 +1392,8 @@
             const [showPresentation, setShowPresentation] = useState(false);
             const [showAdminPanel, setShowAdminPanel] = useState(false);
             const [attachedFiles, setAttachedFiles] = useState([]);
+            const [messages, setMessages] = useState([]);
+            const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
             
             const fileInputRef = useRef(null);
             const messagesEndRef = useRef(null);
@@ -1541,6 +1543,15 @@
                 const html = marked.parse(content);
                 return <div dangerouslySetInnerHTML={{ __html: html }} />;
             };
+            
+            useEffect(() => {
+                const handleResize = () => {
+                    setIsMobile(window.innerWidth <= 768);
+                };
+
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
             
             if (!user) {
                 return <Login onLogin={handleLogin} />;
