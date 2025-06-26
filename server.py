@@ -120,6 +120,7 @@ def parse_chart_from_response(text):
             logger.info("Nenhum texto para parsear dados do gráfico")
             return None
             
+        # First try to find data between [GRAFICO_DADOS] tags
         start = text.find('[GRAFICO_DADOS]')
         end = text.find('[/GRAFICO_DADOS]')
         
@@ -137,6 +138,23 @@ def parse_chart_from_response(text):
                 logger.error(f"Erro ao decodificar JSON do gráfico: {e}")
                 logger.error(f"JSON inválido: {chart_json}")
                 return None
+        
+        # If no tags found, try to find a JSON object in the text
+        import re
+        json_pattern = r'\{[^{}]*\}'
+        matches = re.finditer(json_pattern, text)
+        
+        for match in matches:
+            try:
+                potential_json = match.group()
+                chart_data = json.loads(potential_json)
+                
+                # Validate if it looks like chart data
+                if isinstance(chart_data, dict) and ('products' in chart_data or 'initialValue' in chart_data):
+                    logger.info("Dados do gráfico encontrados em JSON inline")
+                    return chart_data
+            except json.JSONDecodeError:
+                continue
             
         logger.info("Nenhum dado de gráfico encontrado no texto")
         return None
@@ -314,10 +332,21 @@ def send_message():
                         text_start = block_str.find("text='") + 6
                         text_end = block_str.find("'", text_start)
                         if text_start > 5 and text_end > text_start:
-                            # Replace literal \n with actual newlines
+                            # Replace literal \n with actual newlines and add to response
                             text = block_str[text_start:text_end]
-                            text = text.replace('\\n', '\n')
+                            text = text.replace('\\\\n', '\n')  # Handle escaped newlines
+                            text = text.replace('\\n', '\n')    # Handle literal newlines
                             response_text += text
+                            
+                            # Check for chart data in this block
+                            try:
+                                chart_data = parse_chart_from_response(text)
+                                if chart_data:
+                                    logger.info("Dados do gráfico encontrados no bloco")
+                                    break  # Found chart data, no need to continue parsing
+                            except Exception as e:
+                                logger.error(f"Erro ao processar dados do gráfico no bloco: {e}")
+                                continue
                         
                 if not response_text:
                     logger.error("Texto da resposta do Claude está vazio")
