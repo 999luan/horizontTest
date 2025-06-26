@@ -117,21 +117,32 @@ def extract_pdf_text(file_data):
 def parse_chart_from_response(text):
     try:
         if not text:
+            logger.info("Nenhum texto para parsear dados do gráfico")
             return None
             
         start = text.find('[GRAFICO_DADOS]')
         end = text.find('[/GRAFICO_DADOS]')
         
+        logger.info(f"Procurando dados do gráfico - início: {start}, fim: {end}")
+        
         if start != -1 and end != -1:
             chart_json = text[start + 14:end].strip()
-            chart_data = json.loads(chart_json)
+            logger.info(f"JSON do gráfico encontrado: {chart_json}")
             
-            clean_text = text[:start] + text[end + 15:]
-            return chart_data
-        
+            try:
+                chart_data = json.loads(chart_json)
+                logger.info("Dados do gráfico parseados com sucesso")
+                return chart_data
+            except json.JSONDecodeError as e:
+                logger.error(f"Erro ao decodificar JSON do gráfico: {e}")
+                logger.error(f"JSON inválido: {chart_json}")
+                return None
+            
+        logger.info("Nenhum dado de gráfico encontrado no texto")
         return None
     except Exception as e:
         logger.error(f"Erro ao parsear dados do gráfico: {e}")
+        logger.error(f"Texto completo: {text[:200]}...")  # Log apenas os primeiros 200 caracteres
         return None
 
 @app.route('/')
@@ -303,7 +314,10 @@ def send_message():
                         text_start = block_str.find("text='") + 6
                         text_end = block_str.find("'", text_start)
                         if text_start > 5 and text_end > text_start:
-                            response_text += block_str[text_start:text_end]
+                            # Replace literal \n with actual newlines
+                            text = block_str[text_start:text_end]
+                            text = text.replace('\\n', '\n')
+                            response_text += text
                         
                 if not response_text:
                     logger.error("Texto da resposta do Claude está vazio")
@@ -317,10 +331,19 @@ def send_message():
                     return jsonify({"success": False, "message": "Failed to save assistant message"}), 500
                 
                 logger.info("Mensagem processada com sucesso")
+                
+                # Parse chart data with better error handling
+                chart_data = None
+                try:
+                    chart_data = parse_chart_from_response(response_text)
+                except Exception as e:
+                    logger.error(f"Erro ao processar dados do gráfico: {e}")
+                    # Continue without chart data
+                
                 return jsonify({
                     "success": True,
                     "response": response_text,
-                    "chart_data": parse_chart_from_response(response_text)
+                    "chart_data": chart_data
                 })
                     
             except anthropic.AuthenticationError as e:
