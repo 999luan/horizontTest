@@ -76,7 +76,7 @@ try:
     client = anthropic.Anthropic(
         api_key=clean_api_key,
         max_retries=2,  # Reduzir número de retries
-        timeout=30.0    # Timeout em segundos
+        timeout=90.0    # Aumentado de 30s para 90s para evitar timeouts
     )
     # Test the client with a simple request
     test_response = client.messages.create(

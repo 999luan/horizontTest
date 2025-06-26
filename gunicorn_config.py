@@ -50,7 +50,7 @@ max_requests_jitter = 5  # Reduced from 10
 worker_tmp_dir = "/tmp"
 
 # Prevent workers from hanging
-check_worker_timeout = 30  # Reduced from 60
+check_worker_timeout = 60  # Aumentado de 30s para 60s para evitar terminação prematura
 
 # SSL
 ssl_version = 'TLSv1_2'
