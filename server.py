@@ -23,6 +23,7 @@ from database import (
     get_prompt,
     update_prompt
 )
+from setup_db import setup_database
 
 load_dotenv()
 
@@ -42,6 +43,14 @@ if not api_key:
     raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
 client = anthropic.Client(api_key)
+
+# Configurar banco de dados na inicialização
+logger.info("Configurando banco de dados...")
+try:
+    setup_database()
+    logger.info("Banco de dados configurado com sucesso!")
+except Exception as e:
+    logger.error(f"Erro ao configurar banco de dados: {e}")
 
 def extract_pdf_text(file_data):
     try:

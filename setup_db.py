@@ -6,6 +6,14 @@ import bcrypt
 
 load_dotenv()
 
+def check_table_exists(cursor, table_name):
+    try:
+        cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+        return cursor.fetchone() is not None
+    except Error as e:
+        print(f"Erro ao verificar tabela {table_name}: {e}")
+        return False
+
 def setup_database():
     try:
         # Conectar ao banco de dados
@@ -21,7 +29,30 @@ def setup_database():
             print("Conexão estabelecida com sucesso!")
             cursor = connection.cursor()
 
-            # Ler e executar o script SQL
+            # Verificar se as tabelas já existem
+            tables_exist = all([
+                check_table_exists(cursor, 'users'),
+                check_table_exists(cursor, 'chats'),
+                check_table_exists(cursor, 'chat_messages'),
+                check_table_exists(cursor, 'prompts')
+            ])
+
+            if tables_exist:
+                print("Tabelas já existem, verificando dados...")
+                
+                # Verificar se existe algum usuário
+                cursor.execute("SELECT COUNT(*) FROM users")
+                user_count = cursor.fetchone()[0]
+                
+                # Verificar se existe algum prompt
+                cursor.execute("SELECT COUNT(*) FROM prompts")
+                prompt_count = cursor.fetchone()[0]
+                
+                if user_count > 0 and prompt_count > 0:
+                    print("Banco de dados já está configurado!")
+                    return
+                
+            # Se chegou aqui, precisa configurar o banco
             print("\nExecutando script SQL...")
             with open('setup_database.sql', 'r', encoding='utf-8') as sql_file:
                 sql_script = sql_file.read()
@@ -34,18 +65,21 @@ def setup_database():
                         cursor.execute(command)
                         print("Comando executado com sucesso!")
 
-            # Criar usuário admin
-            print("\nCriando usuário admin...")
-            admin_password = "horizont2025"
-            password_hash = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
-            
-            cursor.execute("""
-                INSERT INTO users (username, password_hash, role)
-                VALUES (%s, %s, %s)
-            """, ('admin', password_hash.decode('utf-8'), 'admin'))
+            # Criar usuário admin se não existir
+            print("\nVerificando usuário admin...")
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+            if cursor.fetchone()[0] == 0:
+                print("Criando usuário admin...")
+                admin_password = "horizont2025"
+                password_hash = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
+                
+                cursor.execute("""
+                    INSERT INTO users (username, password_hash, role)
+                    VALUES (%s, %s, %s)
+                """, ('admin', password_hash.decode('utf-8'), 'admin'))
 
-            # Criar usuários iniciais
-            print("\nCriando usuários iniciais...")
+            # Criar usuários iniciais se não existirem
+            print("\nVerificando usuários iniciais...")
             initial_users = [
                 ('carlos', '123456', 'user'),
                 ('ana', '123456', 'user'),
@@ -53,23 +87,29 @@ def setup_database():
             ]
 
             for username, password, role in initial_users:
-                password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-                cursor.execute("""
-                    INSERT INTO users (username, password_hash, role)
-                    VALUES (%s, %s, %s)
-                """, (username, password_hash.decode('utf-8'), role))
+                cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", (username,))
+                if cursor.fetchone()[0] == 0:
+                    print(f"Criando usuário {username}...")
+                    password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                    cursor.execute("""
+                        INSERT INTO users (username, password_hash, role)
+                        VALUES (%s, %s, %s)
+                    """, (username, password_hash.decode('utf-8'), role))
 
-            # Criar prompt padrão
-            print("\nCriando prompt padrão...")
-            with open('config.json', 'r', encoding='utf-8') as f:
-                import json
-                config = json.load(f)
-                default_prompt = config.get('claude_prompt', '')
-                
-                cursor.execute("""
-                    INSERT INTO prompts (name, description, content, created_by, updated_by)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, ('Prompt Padrão', 'Prompt padrão do sistema', default_prompt, 'admin', 'admin'))
+            # Criar prompt padrão se não existir
+            print("\nVerificando prompt padrão...")
+            cursor.execute("SELECT COUNT(*) FROM prompts WHERE is_active = TRUE")
+            if cursor.fetchone()[0] == 0:
+                print("Criando prompt padrão...")
+                with open('config.json', 'r', encoding='utf-8') as f:
+                    import json
+                    config = json.load(f)
+                    default_prompt = config.get('claude_prompt', '')
+                    
+                    cursor.execute("""
+                        INSERT INTO prompts (name, description, content, created_by, updated_by)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, ('Prompt Padrão', 'Prompt padrão do sistema', default_prompt, 'admin', 'admin'))
 
             # Commit das alterações
             connection.commit()
