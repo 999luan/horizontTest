@@ -215,16 +215,14 @@ def send_message():
         logger.info("Enviando mensagem para o Claude")
         try:
             # Prepara as mensagens para o Claude
-            messages_for_claude = [
-                {"role": "system", "content": str(system_prompt)}
-            ]
+            messages_for_claude = []
             
             # Adiciona o histórico da conversa
             for msg in conversation:
                 role = "assistant" if msg["role"] == "assistant" else "user"
                 messages_for_claude.append({
                     "role": role,
-                    "content": msg["content"]
+                    "content": [{"type": "text", "text": msg["content"]}]
                 })
             
             logger.info(f"Mensagens preparadas para o Claude: {len(messages_for_claude)} mensagens")
@@ -251,7 +249,12 @@ def send_message():
                 logger.error(f"Erro inesperado na chamada do Claude: {str(e)}")
                 raise
             
-            assistant_message = response.content[0].text
+            # Extrai a resposta do Claude
+            assistant_message = ""
+            for content in response.content:
+                if content.type == "text":
+                    assistant_message += content.text
+            
             logger.info(f"Resposta do Claude processada: {len(assistant_message)} caracteres")
             
         except Exception as e:
