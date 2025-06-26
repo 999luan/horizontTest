@@ -42,7 +42,7 @@ api_key = os.getenv('ANTHROPIC_API_KEY')
 if not api_key:
     raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
-client = anthropic.Client(api_key)
+client = anthropic.Anthropic(api_key=api_key)
 
 # Configurar banco de dados na inicialização
 logger.info("Configurando banco de dados...")
@@ -202,28 +202,28 @@ def send_message():
         # Envia para o Claude
         logger.info("Enviando mensagem para o Claude")
         try:
-            messages_for_claude = []
-            # Adiciona o prompt do sistema como primeira mensagem do usuário
-            messages_for_claude.append({
-                "role": "user",
-                "content": str(system_prompt)
-            })
-            # Adiciona o resto da conversa
-            messages_for_claude.extend([
-                {"role": msg["role"], "content": msg["content"]}
-                for msg in conversation
-            ])
+            # Prepara as mensagens para o Claude
+            messages_for_claude = [
+                {"role": "system", "content": str(system_prompt)}
+            ]
             
-            prompt = "\n\nHuman: " + "\n\nHuman: ".join(msg["content"] for msg in messages_for_claude if msg["role"] == "user") + "\n\nAssistant: "
+            # Adiciona o histórico da conversa
+            for msg in conversation:
+                role = "assistant" if msg["role"] == "assistant" else "user"
+                messages_for_claude.append({
+                    "role": role,
+                    "content": msg["content"]
+                })
             
-            response = client.complete(
-                prompt=prompt,
-                stop_sequences=["\n\nHuman:"],
+            # Faz a chamada para o Claude
+            response = client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=4096,
+                messages=messages_for_claude
             )
             
-            assistant_message = response['completion']
+            assistant_message = response.content[0].text
+            
         except Exception as e:
             logger.error(f"Erro na chamada do Claude: {e}")
             return jsonify({"success": False, "message": "Error communicating with Claude"}), 500
