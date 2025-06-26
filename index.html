@@ -290,6 +290,7 @@
         .message-input {
             width: 100%;
             min-height: 60px;
+            max-height: 200px;
             padding: var(--spacing-md);
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -297,9 +298,9 @@
             color: var(--text-color);
             font-size: 16px;
             line-height: 1.5;
-            resize: none;
-            transition: border-color 0.2s ease;
+            resize: vertical;
             font-family: inherit;
+            transition: all 0.2s ease;
         }
 
         .message-input:focus {
@@ -319,22 +320,6 @@
                 min-height: 50px;
                 font-size: 16px;
                 padding: var(--spacing-sm) var(--spacing-md);
-            }
-            
-            .input-container {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                padding: var(--spacing-sm);
-                background-color: var(--background-color);
-                border-top: 1px solid var(--border-color);
-                z-index: 1000;
-            }
-
-            .input-wrapper {
-                gap: var(--spacing-sm);
-                padding: var(--spacing-xs);
             }
         }
 
@@ -407,7 +392,6 @@
             resize: vertical;
             font-family: inherit;
             transition: all 0.2s ease;
-            line-height: 1.5;
         }
 
         .message-input:focus {
@@ -767,13 +751,22 @@
         }
 
         .input-container {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
+            padding: var(--spacing-md);
             background-color: var(--background-color);
-            border-radius: 8px;
-            padding: 8px;
-            border: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            z-index: 10;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: var(--spacing-md);
+            align-items: flex-end;
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-sm);
         }
 
         .input-actions {
