@@ -1426,6 +1426,7 @@
             const chartInstanceRef = React.useRef(null);
             const dataHashRef = React.useRef(null);
             const [chartError, setChartError] = React.useState(null);
+            const [isInitialized, setIsInitialized] = React.useState(false);
 
             // Criar hash dos dados para evitar re-renders desnecessários
             const currentDataHash = React.useMemo(() => {
@@ -1448,6 +1449,12 @@
             }, [data.years, data.initialValue, data.title, data.products]);
 
             React.useEffect(() => {
+                // Se já foi inicializado e os dados não mudaram, NÃO FAZER NADA
+                if (isInitialized && dataHashRef.current === currentDataHash && chartInstanceRef.current) {
+                    console.log('Gráfico já existe e dados não mudaram - IGNORANDO');
+                    return;
+                }
+
                 // Limpar erro anterior
                 setChartError(null);
                 
@@ -1631,6 +1638,8 @@
                     });
 
                     chartInstanceRef.current = newChart;
+                    setIsInitialized(true);
+                    console.log('Gráfico criado com sucesso');
 
                 } catch (error) {
                     console.error('Erro ao criar gráfico:', error);
