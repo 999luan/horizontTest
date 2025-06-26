@@ -1430,12 +1430,17 @@
             // Criar hash dos dados para evitar re-renders desnecessários
             const currentDataHash = React.useMemo(() => {
                 try {
-                    return JSON.stringify({
+                    // Hash mais específico incluindo todos os dados relevantes
+                    const hashData = {
                         years: data.years,
                         initialValue: data.initialValue,
                         title: data.title,
-                        products: Object.keys(data.products).sort()
-                    });
+                        products: Object.entries(data.products).map(([name, product]) => ({
+                            name,
+                            rate: product.rate
+                        })).sort((a, b) => a.name.localeCompare(b.name))
+                    };
+                    return JSON.stringify(hashData);
                 } catch (e) {
                     console.error('Erro ao criar hash dos dados:', e);
                     return null;
@@ -1452,11 +1457,13 @@
                     return;
                 }
 
-                // Só recriar o gráfico se os dados realmente mudaram
-                if (dataHashRef.current === currentDataHash) {
+                // Verificação mais robusta: só recriar se dados realmente mudaram
+                if (dataHashRef.current === currentDataHash && chartInstanceRef.current) {
+                    console.log('Dados não mudaram, mantendo gráfico atual');
                     return;
                 }
                 
+                console.log('Dados mudaram, recriando gráfico');
                 dataHashRef.current = currentDataHash;
                 
                 const canvas = canvasRef.current;
@@ -1970,7 +1977,8 @@
         };
         
         // Prompt Manager Component
-        const PromptManager = () => {
+        const PromptManager = function(props) {
+            const isAdmin = props.isAdmin;
             const [prompt, setPrompt] = useState('');
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState('');
@@ -1982,8 +1990,12 @@
 
             const loadPrompt = async () => {
                 try {
-                    const response = await api.getPrompt();
-                    setPrompt(response);
+                    // Usar endpoint correto baseado no role
+                    const endpoint = isAdmin ? '/admin/config/prompt' : '/config/prompt';
+                    const response = await fetch(`${API_BASE}${endpoint}`);
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.message);
+                    setPrompt(data.prompt);
                 } catch (error) {
                     setError('Erro ao carregar o prompt');
                     console.error('Erro:', error);
@@ -2161,7 +2173,7 @@
                     </div>
 
                     <UserManager onUserCreated={fetchUsers} />
-                    <PromptManager />
+                    <PromptManager isAdmin={props.isAdmin} />
 
                     <div className="admin-section">
                         <h2>Gerenciar Representantes</h2>
@@ -2697,7 +2709,8 @@
                 // Admin Panel
                 showAdminPanel && React.createElement(AdminPanel, {
                     key: 'admin-panel',
-                    onClose: () => setShowAdminPanel(false)
+                    onClose: () => setShowAdminPanel(false),
+                    isAdmin: isAdmin
                 }),
                 
                 // Menu toggle button for mobile - only show if logged in
