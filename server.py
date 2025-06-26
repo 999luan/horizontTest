@@ -43,6 +43,11 @@ if not api_key:
     logger.error("ANTHROPIC_API_KEY não está configurada!")
     raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
+# Log para debug da chave (apenas os primeiros/últimos caracteres)
+key_start = api_key[:7] if len(api_key) > 7 else api_key
+key_end = api_key[-4:] if len(api_key) > 4 else ""
+logger.info(f"ANTHROPIC_API_KEY encontrada. Começa com: {key_start}, Termina com: {key_end}, Tamanho: {len(api_key)}")
+
 logger.info("Inicializando cliente do Claude...")
 try:
     client = anthropic.Anthropic(api_key=api_key)
@@ -226,12 +231,24 @@ def send_message():
             
             # Faz a chamada para o Claude
             logger.info("Chamando API do Claude...")
-            response = client.messages.create(
-                model="claude-3-haiku-20240307",
-                max_tokens=4096,
-                messages=messages_for_claude
-            )
-            logger.info("Resposta recebida do Claude")
+            try:
+                logger.info("Tentando fazer chamada com client configurado...")
+                response = client.messages.create(
+                    model="claude-3-sonnet-20240229",
+                    max_tokens=4096,
+                    messages=messages_for_claude
+                )
+                logger.info("Resposta recebida do Claude")
+            except anthropic.APIError as e:
+                logger.error(f"Erro na API do Claude: {str(e)}")
+                if hasattr(e, 'status_code'):
+                    logger.error(f"Status code: {e.status_code}")
+                if hasattr(e, 'headers'):
+                    logger.error(f"Headers da resposta: {e.headers}")
+                raise
+            except Exception as e:
+                logger.error(f"Erro inesperado na chamada do Claude: {str(e)}")
+                raise
             
             assistant_message = response.content[0].text
             logger.info(f"Resposta do Claude processada: {len(assistant_message)} caracteres")
