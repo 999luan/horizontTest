@@ -191,6 +191,12 @@ def parse_chart_from_response(text):
 def process_claude_message(messages, max_retries=2):
     for attempt in range(max_retries):
         try:
+            # Obter o prompt do sistema
+            system_prompt = get_prompt()
+            if not system_prompt:
+                logger.warning("Nenhum prompt do sistema encontrado, usando prompt padrão")
+                system_prompt = "Você é um assistente especializado em investimentos da Horizont Investimentos."
+            
             # Verificar tamanho total das mensagens
             total_tokens = sum(len(msg["content"].split()) for msg in messages) * 2  # Estimativa aproximada
             
@@ -207,6 +213,7 @@ def process_claude_message(messages, max_retries=2):
                 model="claude-3-opus-20240229",
                 max_tokens=max_tokens,
                 messages=messages,
+                system=system_prompt,
                 temperature=temp
             )
             

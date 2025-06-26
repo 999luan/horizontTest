@@ -75,11 +75,7 @@
         // Função para carregar o prompt atual
         async function loadPrompt() {
             try {
-                const response = await fetch('/api/admin/config/prompt', {
-                    headers: {
-                        'Authorization': 'Basic admin:horizont2025'
-                    }
-                });
+                const response = await fetch('/api/admin/config/prompt');
                 const data = await response.json();
                 document.getElementById('promptText').value = data.prompt;
             } catch (error) {
@@ -94,8 +90,7 @@
                 const response = await fetch('/api/admin/config/prompt', {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Basic admin:horizont2025'
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ prompt: promptText })
                 });

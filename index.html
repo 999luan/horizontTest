@@ -2463,7 +2463,8 @@
                                 key: 'actions',
                                 className: 'user-actions'
                             }, [
-                                React.createElement('button', {
+                                // Só mostrar botão admin se o usuário for admin
+                                isAdmin && React.createElement('button', {
                                     key: 'admin',
                                     className: 'admin-btn',
                                     onClick: () => setShowAdminPanel(true)
