@@ -1350,7 +1350,7 @@
                     const textContent = content.replace(/\[GRAFICO_DADOS\][\s\S]*?\[\/GRAFICO_DADOS\]/, '');
                     const textHtml = marked.parse(textContent);
                     
-                    return React.createElement('div', { key: 'message-content' }, [
+                    return React.createElement('div', { key: `message-${Date.now()}-${Math.random()}` }, [
                         React.createElement('div', { 
                             key: 'text',
                             dangerouslySetInnerHTML: { __html: textHtml }
@@ -1366,7 +1366,10 @@
             }
             
             const html = marked.parse(content);
-            return React.createElement('div', { dangerouslySetInnerHTML: { __html: html } });
+            return React.createElement('div', { 
+                key: `content-${Date.now()}-${Math.random()}`,
+                dangerouslySetInnerHTML: { __html: html } 
+            });
         };
 
         // Função auxiliar para gerar cores aleatórias

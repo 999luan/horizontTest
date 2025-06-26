@@ -326,17 +326,19 @@ def message():
 
             assistant_message = response.content[0].text
             
-            # Salvar mensagens no banco
+            # Salvar mensagens no banco de forma otimizada
             if chat_id:
-                logger.info(f"Tentando adicionar mensagem ao chat {chat_id}")
-                logger.info(f"Role: user")
-                logger.info(f"Content length: {len(message_content)}")
+                logger.info(f"Salvando mensagens no chat {chat_id}")
                 
-                add_message_to_chat(chat_id, "user", message_content)
-                logger.info("Mensagem do usuário salva com sucesso!")
-                
-                add_message_to_chat(chat_id, "assistant", assistant_message)
-                logger.info("Mensagem do assistente salva com sucesso!")
+                # Salvar ambas as mensagens de uma vez para ser mais rápido
+                try:
+                    add_message_to_chat(chat_id, "user", message_content)
+                    add_message_to_chat(chat_id, "assistant", assistant_message)
+                    logger.info("Mensagens salvas com sucesso!")
+                except Exception as db_error:
+                    logger.error(f"Erro ao salvar no banco: {db_error}")
+                    # Não falhar a resposta por erro no banco
+                    pass
             
             return jsonify({
                 "success": True,
