@@ -85,9 +85,46 @@
             font-size: 0.9rem;
             color: var(--text-secondary);
             margin-bottom: 15px;
-            padding: 8px;
+            padding: 12px;
             background-color: var(--background-color);
             border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .admin-btn, .logout-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .admin-btn {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .admin-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .logout-btn {
+            background-color: var(--danger-color);
+            color: var(--text-color);
+        }
+
+        .logout-btn:hover {
+            background-color: #d73a31;
         }
 
         .new-chat-btn {
@@ -391,11 +428,11 @@
                 top: 0;
                 bottom: 0;
                 z-index: 1000;
-                transition: left 0.3s ease;
+                transition: transform 0.3s ease;
             }
 
             .sidebar.open {
-                left: 0;
+                transform: translateX(300px);
             }
 
             .message {
@@ -403,26 +440,105 @@
             }
 
             .input-container {
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                align-items: flex-end;
+                gap: 8px;
+                padding: 8px;
+            }
+
+            textarea {
+                min-height: 44px;
+                max-height: 100px;
             }
 
             .input-buttons {
-                margin-top: 8px;
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
             }
 
-            .sidebar-toggle {
-                display: block;
+            .attach-btn, .send-btn {
+                padding: 10px;
+                min-width: 44px;
+                height: 44px;
+            }
+
+            .menu-toggle {
                 position: fixed;
-                left: 10px;
                 top: 10px;
+                left: 10px;
                 z-index: 1001;
                 padding: 10px;
-                background: var(--surface-color);
+                background-color: var(--surface-color);
                 border: 1px solid var(--border-color);
                 border-radius: var(--border-radius);
-                cursor: pointer;
                 color: var(--text-color);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding-top: 60px;
+            }
+
+            /* Mobile Admin Panel Styles */
+            .admin-panel {
+                margin: 10px;
+                padding: 10px;
+                gap: 10px;
+                max-height: calc(100vh - 80px);
+            }
+
+            .admin-section {
+                padding: 15px;
+            }
+
+            .admin-messages {
+                max-height: 400px;
+            }
+
+            .user-item {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            .view-chats-btn {
+                width: 100%;
+            }
+
+            .admin-chat-list {
+                max-height: 250px;
+            }
+
+            .admin-chat-list .chat-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .chat-item-date {
+                font-size: 0.8rem;
+                color: var(--text-secondary);
+            }
+
+            .message-header {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .message-date {
+                width: 100%;
+                text-align: right;
+                font-size: 0.75rem;
+            }
+
+            .user-actions {
+                flex-direction: column;
             }
         }
 
@@ -479,11 +595,6 @@
             background-color: #1a5cc6;
         }
 
-        /* Mobile Styles */
-        .sidebar-toggle {
-            display: none;
-        }
-
         /* Markdown Styles */
         .message-content p {
             margin-bottom: 10px;
@@ -522,135 +633,128 @@
 
         /* Admin Panel Styles */
         .admin-panel {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 400px;
-            height: 100vh;
+            padding: 20px;
             background-color: var(--surface-color);
-            border-left: 1px solid var(--border-color);
-            transition: right 0.3s ease;
+            border-radius: var(--border-radius);
+            margin: 20px;
             display: flex;
             flex-direction: column;
-            z-index: 1000;
+            gap: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
         }
 
-        .admin-panel.open {
-            right: 0;
-        }
-
-        .admin-header {
+        .admin-section {
+            background-color: var(--background-color);
             padding: 20px;
-            border-bottom: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+
+        .admin-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+
+        .user-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-item-name {
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .user-item-role {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .view-chats-btn {
+            padding: 8px 12px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-chats-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .admin-chat-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .admin-chat-list .chat-item {
+            cursor: pointer;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            border-radius: var(--border-radius);
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: var(--surface-color);
         }
 
-        .admin-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            background-color: var(--surface-color);
+        .admin-chat-list .chat-item:hover {
+            background-color: var(--surface-hover);
         }
 
-        .tab-btn {
-            flex: 1;
-            padding: 15px;
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: background-color 0.2s;
+        .admin-chat-list .chat-item.active {
+            border-color: var(--primary-color);
+            background-color: var(--surface-hover);
         }
 
-        .tab-btn.active {
-            background-color: var(--primary-color);
-        }
-
-        .admin-content {
-            flex: 1;
+        .admin-messages {
+            max-height: 500px;
             overflow-y: auto;
             padding: 20px;
             background-color: var(--surface-color);
-        }
-
-        .user-form {
-            background-color: var(--background-color);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .user-form input, .user-form select {
-            padding: 10px;
-            border-radius: 6px;
+            border-radius: var(--border-radius);
             border: 1px solid var(--border-color);
-            background-color: var(--surface-color);
-            color: var(--text-color);
         }
 
-        .user-list {
-            display: grid;
-            gap: 15px;
+        .message-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-left: auto;
         }
 
-        .user-card {
-            background-color: var(--background-color);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .prompt-form textarea {
-            width: 100%;
-            margin-bottom: 15px;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
+        .login-error {
+            margin-top: 15px;
             padding: 10px;
-            border-radius: 6px;
-        }
-
-        .status {
-            padding: 10px;
-            margin: 10px 20px;
-            border-radius: 6px;
-            color: var(--text-color);
-        }
-
-        .status.success {
-            background-color: var(--success-color);
-        }
-
-        .status.error {
-            background-color: var(--danger-color);
-        }
-
-        /* Logout Button */
-        .logout-btn {
             background-color: var(--danger-color);
             color: var(--text-color);
-            border: none;
-            border-radius: 6px;
-            padding: 10px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-            transition: opacity 0.2s;
-        }
-
-        .logout-btn:hover {
-            opacity: 0.9;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -661,6 +765,12 @@
         
         // API Configuration
         const API_BASE = 'http://localhost:8000/api';
+        
+        // Utility Functions
+        const renderMessage = (content) => {
+            const html = marked.parse(content);
+            return React.createElement('div', { dangerouslySetInnerHTML: { __html: html } });
+        };
         
         // API Functions
         const api = {
@@ -765,35 +875,28 @@
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
-            const [loading, setLoading] = useState(false);
-            
+
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 setError('');
-                setLoading(true);
-                
+
                 try {
-                    const result = await api.login(username, password);
-                    if (result.success) {
-                        onLogin(username, result.role === 'admin', result.name);
+                    const response = await api.login(username, password);
+                    if (response.success) {
+                        onLogin(username, response.role === 'admin', response.name);
                     } else {
-                        setError(result.message || 'Erro ao fazer login');
+                        setError('Credenciais inválidas');
                     }
                 } catch (err) {
-                    console.error('Erro no login:', err);
-                    setError('Erro de conexão com o servidor');
-                } finally {
-                    setLoading(false);
+                    setError('Erro ao fazer login');
+                    console.error('Erro:', err);
                 }
             };
-            
+
             return (
                 <div className="login-screen">
                     <div className="login-box">
-                        <div className="login-logo">🏢</div>
                         <h1 className="login-title">Horizont IA</h1>
-                        <p className="login-subtitle">Consultor Virtual Inteligente</p>
-                        
                         <form onSubmit={handleSubmit}>
                             <input
                                 type="text"
@@ -801,9 +904,6 @@
                                 placeholder="Usuário"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                required
-                                autoComplete="username"
-                                disabled={loading}
                             />
                             <input
                                 type="password"
@@ -811,22 +911,12 @@
                                 placeholder="Senha"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
-                                disabled={loading}
                             />
-                            <button type="submit" className="login-btn" disabled={loading}>
-                                {loading ? '⏳ Entrando...' : '🔑 Entrar'}
+                            <button type="submit" className="login-btn">
+                                Entrar
                             </button>
+                            {error && <div className="login-error">{error}</div>}
                         </form>
-                        
-                        {error && <div className="login-error">❌ {error}</div>}
-                        
-                        <div className="login-info">
-                            <strong>Demo:</strong><br />
-                            admin / horizont2025<br />
-                            carlos / 123456
-                        </div>
                     </div>
                 </div>
             );
@@ -1160,218 +1250,111 @@
         };
         
         // Admin Panel Component
-        const AdminPanel = ({ isOpen, onClose }) => {
-            const [activeTab, setActiveTab] = useState('users');
+        const AdminPanel = ({ onClose }) => {
             const [users, setUsers] = useState([]);
-            const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
-            const [promptText, setPromptText] = useState('');
-            const [loading, setLoading] = useState(false);
-            const [status, setStatus] = useState({ type: '', message: '' });
+            const [selectedUser, setSelectedUser] = useState(null);
+            const [userChats, setUserChats] = useState([]);
+            const [selectedChat, setSelectedChat] = useState(null);
+            const [chatMessages, setChatMessages] = useState([]);
 
-            // Carregar dados quando o painel abrir
             useEffect(() => {
-                if (isOpen) {
-                    loadData();
-                }
-            }, [isOpen, activeTab]);
+                fetchUsers();
+            }, []);
 
-            const loadData = async () => {
-                setLoading(true);
+            const fetchUsers = async () => {
                 try {
-                    if (activeTab === 'users') {
-                        const users = await api.getUsers();
-                        setUsers(users);
-                    } else if (activeTab === 'prompt') {
-                        const prompt = await api.getPrompt();
-                        setPromptText(prompt);
-                    }
-                } catch (err) {
-                    console.error('Erro ao carregar dados:', err);
-                    setStatus({
-                        type: 'error',
-                        message: 'Erro ao carregar dados'
-                    });
-                } finally {
-                    setLoading(false);
+                    const response = await api.getUsers();
+                    setUsers(response);
+                } catch (error) {
+                    console.error('Erro ao buscar usuários:', error);
                 }
             };
 
-            const handleCreateUser = async (e) => {
-                e.preventDefault();
-                if (!newUser.username || !newUser.password) {
-                    setStatus({
-                        type: 'error',
-                        message: 'Preencha todos os campos'
-                    });
-                    return;
-                }
-
-                setLoading(true);
+            const fetchUserChats = async (username) => {
                 try {
-                    await api.createUser(newUser);
-                    setStatus({
-                        type: 'success',
-                        message: 'Usuário criado com sucesso!'
-                    });
-                    setNewUser({ username: '', password: '', role: 'user' });
-                    await loadData();
-                } catch (err) {
-                    console.error('Erro ao criar usuário:', err);
-                    setStatus({
-                        type: 'error',
-                        message: err.message || 'Erro ao criar usuário'
-                    });
-                } finally {
-                    setLoading(false);
+                    const response = await api.getChats(username);
+                    setUserChats(response);
+                    setSelectedUser(username);
+                    setSelectedChat(null);
+                    setChatMessages([]);
+                } catch (error) {
+                    console.error('Erro ao buscar chats:', error);
                 }
             };
 
-            const handleDeleteUser = async (username) => {
-                if (!confirm(`Deletar usuário ${username}?`)) return;
-
-                setLoading(true);
-                try {
-                    await api.deleteUser(username);
-                    setStatus({
-                        type: 'success',
-                        message: 'Usuário deletado com sucesso!'
-                    });
-                    await loadData();
-                } catch (err) {
-                    console.error('Erro ao deletar usuário:', err);
-                    setStatus({
-                        type: 'error',
-                        message: err.message || 'Erro ao deletar usuário'
-                    });
-                } finally {
-                    setLoading(false);
-                }
+            const viewChatMessages = (chat) => {
+                setSelectedChat(chat);
+                setChatMessages(chat.messages || []);
             };
 
-            const handleSavePrompt = async () => {
-                if (!promptText.trim()) {
-                    setStatus({
-                        type: 'error',
-                        message: 'O prompt não pode estar vazio'
-                    });
-                    return;
-                }
-
-                setLoading(true);
-                try {
-                    await api.updatePrompt(promptText);
-                    setStatus({
-                        type: 'success',
-                        message: 'Prompt atualizado com sucesso!'
-                    });
-                } catch (err) {
-                    console.error('Erro ao salvar prompt:', err);
-                    setStatus({
-                        type: 'error',
-                        message: err.message || 'Erro ao salvar prompt'
-                    });
-                } finally {
-                    setLoading(false);
-                }
+            const formatDate = (dateString) => {
+                return new Date(dateString).toLocaleString('pt-BR');
             };
 
             return (
-                <div className={`admin-panel ${isOpen ? 'open' : ''}`}>
-                    <div className="admin-header">
-                        <h2>Painel Administrativo</h2>
-                        <button className="close-btn" onClick={onClose}>✕</button>
-                    </div>
-
-                    <div className="admin-tabs">
-                        <button 
-                            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('users')}
-                        >
-                            👥 Usuários
-                        </button>
-                        <button 
-                            className={`tab-btn ${activeTab === 'prompt' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('prompt')}
-                        >
-                            🤖 Prompt
-                        </button>
-                    </div>
-
-                    {status.message && (
-                        <div className={`status ${status.type}`}>
-                            {status.message}
-                        </div>
-                    )}
-
-                    {activeTab === 'users' && (
-                        <div className="admin-content">
-                            <form onSubmit={handleCreateUser} className="user-form">
-                                <h3>Criar Novo Usuário</h3>
-                                <div className="form-group">
-                                    <input
-                                        type="text"
-                                        placeholder="Usuário"
-                                        value={newUser.username}
-                                        onChange={(e) => setNewUser({...newUser, username: e.target.value})}
-                                        disabled={loading}
-                                    />
-                                    <input
-                                        type="password"
-                                        placeholder="Senha"
-                                        value={newUser.password}
-                                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
-                                        disabled={loading}
-                                    />
-                                    <select
-                                        value={newUser.role}
-                                        onChange={(e) => setNewUser({...newUser, role: e.target.value})}
-                                        disabled={loading}
+                <div className="admin-panel">
+                    <div className="admin-section">
+                        <h2>Gerenciar Representantes</h2>
+                        <div className="user-list">
+                            {users.map(user => (
+                                <div key={user.username} className="user-item">
+                                    <div className="user-item-info">
+                                        <span className="user-item-name">{user.username}</span>
+                                        <span className="user-item-role">{user.role}</span>
+                                    </div>
+                                    <button 
+                                        className="view-chats-btn"
+                                        onClick={() => fetchUserChats(user.username)}
                                     >
-                                        <option value="user">Usuário</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
+                                        Ver Conversas
+                                    </button>
                                 </div>
-                                <button type="submit" disabled={loading}>
-                                    {loading ? '⏳ Criando...' : '➕ Criar Usuário'}
-                                </button>
-                            </form>
+                            ))}
+                        </div>
+                    </div>
 
-                            <div className="user-list">
-                                {users.map(user => (
-                                    <div key={user.id} className="user-card">
-                                        <div className="user-info">
-                                            <h4>{user.username}</h4>
-                                            <p>Função: {user.role}</p>
-                                            <p>Criado em: {new Date(user.created_at).toLocaleString()}</p>
-                                            <p>Último login: {user.last_login ? new Date(user.last_login).toLocaleString() : 'Nunca'}</p>
-                                        </div>
-                                        <button 
-                                            className="delete-btn"
-                                            onClick={() => handleDeleteUser(user.username)}
-                                            disabled={loading}
-                                        >
-                                            🗑️
-                                        </button>
+                    {selectedUser && (
+                        <div className="admin-section">
+                            <h2>Conversas de {selectedUser}</h2>
+                            <div className="chat-list admin-chat-list">
+                                {userChats.map(chat => (
+                                    <div 
+                                        key={chat.id} 
+                                        className={`chat-item ${selectedChat && selectedChat.id === chat.id ? 'active' : ''}`}
+                                        onClick={() => viewChatMessages(chat)}
+                                    >
+                                        <span className="chat-item-title">{chat.title}</span>
+                                        <span className="chat-item-date">
+                                            {formatDate(chat.created_at)}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {activeTab === 'prompt' && (
-                        <div className="admin-content">
-                            <div className="prompt-form">
-                                <h3>Configurar Prompt do Sistema</h3>
-                                <textarea
-                                    value={promptText}
-                                    onChange={(e) => setPromptText(e.target.value)}
-                                    placeholder="Digite o prompt do sistema..."
-                                    rows={10}
-                                    disabled={loading}
-                                />
-                                <button onClick={handleSavePrompt} disabled={loading}>
-                                    {loading ? '⏳ Salvando...' : '💾 Salvar Prompt'}
-                                </button>
+                    {selectedChat && (
+                        <div className="admin-section">
+                            <h2>Mensagens da Conversa</h2>
+                            <div className="messages-container admin-messages">
+                                {chatMessages.map((msg, index) => (
+                                    <div key={index} className={`message ${msg.role}`}>
+                                        <div className="message-header">
+                                            <div className={msg.role === 'user' ? 'user-avatar' : 'assistant-avatar'}>
+                                                {msg.role === 'user' ? '👤' : '🎯'}
+                                            </div>
+                                            <span className="message-role">
+                                                {msg.role === 'user' ? selectedUser : 'Consultor Horizont'}
+                                            </span>
+                                            <span className="message-date">
+                                                {formatDate(msg.created_at)}
+                                            </span>
+                                        </div>
+                                        <div className="message-content">
+                                            {renderMessage(msg.content)}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -1415,7 +1398,7 @@
             
             const loadChats = async () => {
                 try {
-                    const chats = await api.getChats(user);
+                    const chats = await api.getChats(user.username);
                     setChats(chats);
                     if (chats.length > 0 && activeChat === null) {
                         setActiveChat(0);
@@ -1427,7 +1410,7 @@
             };
             
             const handleLogin = (username, isAdmin, name) => {
-                setUser(username);
+                setUser({ username, role: isAdmin ? 'admin' : 'user', name });
                 setIsAdmin(isAdmin);
                 setUserName(name);
             };
@@ -1442,11 +1425,12 @@
                 setSidebarOpen(false);
                 setShowPresentation(false);
                 setShowAdminPanel(false);
+                setAttachedFiles([]);
             };
             
             const handleNewChat = async () => {
                 try {
-                    const result = await api.createChat(user);
+                    const result = await api.createChat(user.username);
                     await loadChats();
                     setActiveChat(0);
                     setSidebarOpen(false);
@@ -1505,7 +1489,7 @@
                         })
                     );
                     
-                    const result = await api.sendMessage(user, chatId, currentMessage, filesData);
+                    const result = await api.sendMessage(user.username, chatId, currentMessage, filesData);
                     await loadChats();
                 } catch (err) {
                     console.error('Erro ao enviar:', err);
@@ -1539,11 +1523,6 @@
                 return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
             };
             
-            const renderMessage = (content) => {
-                const html = marked.parse(content);
-                return <div dangerouslySetInnerHTML={{ __html: html }} />;
-            };
-            
             useEffect(() => {
                 const handleResize = () => {
                     setIsMobile(window.innerWidth <= 768);
@@ -1563,7 +1542,7 @@
                 <div className="app">
                     {isMobile && (
                         <button 
-                            className="sidebar-toggle"
+                            className="menu-toggle"
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                         >
                             ☰
@@ -1571,25 +1550,26 @@
                     )}
                     <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
                         <div className="sidebar-header">
-                            <div className="sidebar-logo">
-                                🏢 Horizont IA
-                            </div>
+                            <h1 className="sidebar-logo">Horizont IA</h1>
                             <div className="user-info">
-                                👤 {userName || user}
-                                {isAdmin && <span style={{ color: '#10a37f' }}> (Admin)</span>}
+                                <span>{user && (user.name || user.username)}</span>
+                                <div className="user-actions">
+                                    {user && user.role === 'admin' && (
+                                        <button 
+                                            className="admin-btn"
+                                            onClick={() => setShowAdminPanel(true)}
+                                        >
+                                            👑 Painel Admin
+                                        </button>
+                                    )}
+                                    <button 
+                                        className="logout-btn"
+                                        onClick={handleLogout}
+                                    >
+                                        🚪 Sair
+                                    </button>
+                                </div>
                             </div>
-                            {isAdmin && (
-                                <button 
-                                    className="logout-btn" 
-                                    onClick={() => setShowAdminPanel(true)}
-                                    style={{ marginBottom: '10px', background: '#1f6feb' }}
-                                >
-                                    🛠️ Painel Admin
-                                </button>
-                            )}
-                            <button className="logout-btn" onClick={handleLogout}>
-                                🚪 Sair
-                            </button>
                         </div>
                         
                         <button className="new-chat-btn" onClick={handleNewChat}>
@@ -1620,119 +1600,125 @@
                     
                     {/* Main Content */}
                     <div className="main-content">
-                        {currentChat ? (
+                        {showAdminPanel ? (
+                            <AdminPanel onClose={() => setShowAdminPanel(false)} />
+                        ) : (
                             <React.Fragment>
-                                {/* Messages */}
-                                <div className="messages-container">
-                                    {currentChat.messages.map((msg, index) => (
-                                        <div key={index} className="message">
-                                            <div className="message-header">
-                                                <div className={msg.role === 'user' ? 'user-avatar' : 'assistant-avatar'}>
-                                                    {msg.role === 'user' ? '👤' : '🎯'}
-                                                </div>
-                                                <span className="message-role">
-                                                    {msg.role === 'user' ? 'Você' : 'Consultor Horizont'}
-                                                </span>
-                                            </div>
-                                            <div className="message-content">
-                                                {msg.files && msg.files.length > 0 && (
-                                                    <div className="files-container">
-                                                        {msg.files.map((file, i) => (
-                                                            <div key={i} className="file-preview">
-                                                                <div className="file-icon">
-                                                                    {file.type && file.type.includes('pdf') ? '📄' : '📎'}
-                                                                </div>
-                                                                <div className="file-info">
-                                                                    <div className="file-name">{file.name}</div>
-                                                                    <div className="file-size">{formatFileSize(file.size)}</div>
-                                                                </div>
+                                {currentChat ? (
+                                    <React.Fragment>
+                                        {/* Messages */}
+                                        <div className="messages-container">
+                                            {currentChat.messages.map((msg, index) => (
+                                                <div key={index} className={`message ${msg.role}`}>
+                                                    <div className="message-header">
+                                                        <div className={msg.role === 'user' ? 'user-avatar' : 'assistant-avatar'}>
+                                                            {msg.role === 'user' ? '👤' : '🎯'}
+                                                        </div>
+                                                        <span className="message-role">
+                                                            {msg.role === 'user' ? 'Você' : 'Consultor Horizont'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="message-content">
+                                                        {msg.files && msg.files.length > 0 && (
+                                                            <div className="files-container">
+                                                                {msg.files.map((file, i) => (
+                                                                    <div key={i} className="file-preview">
+                                                                        <div className="file-icon">
+                                                                            {file.type && file.type.includes('pdf') ? '📄' : '📎'}
+                                                                        </div>
+                                                                        <div className="file-info">
+                                                                            <div className="file-name">{file.name}</div>
+                                                                            <div className="file-size">{formatFileSize(file.size)}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        ))}
+                                                        )}
+                                                        {renderMessage(msg.content)}
+                                                        {msg.chart && <Chart data={msg.chart} />}
                                                     </div>
-                                                )}
-                                                {renderMessage(msg.content)}
-                                                {msg.chart && <Chart data={msg.chart} />}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    <div ref={messagesEndRef} />
-                                </div>
-                                
-                                {/* Input Area */}
-                                <div className="input-area">
-                                    {attachedFiles.length > 0 && (
-                                        <div className="attached-files">
-                                            {attachedFiles.map((file, index) => (
-                                                <div key={index} className="file-preview">
-                                                    <div className="file-icon">
-                                                        {file.type && file.type.includes('pdf') ? '📄' : '📎'}
-                                                    </div>
-                                                    <div className="file-info">
-                                                        <div className="file-name">{file.name}</div>
-                                                        <div className="file-size">{formatFileSize(file.size)}</div>
-                                                    </div>
-                                                    <button 
-                                                        className="remove-file-btn"
-                                                        onClick={() => removeFile(index)}
-                                                    >
-                                                        ✕
-                                                    </button>
                                                 </div>
                                             ))}
+                                            <div ref={messagesEndRef} />
                                         </div>
-                                    )}
-                                    
-                                    <div className="input-container">
-                                        <textarea
-                                            ref={inputRef}
-                                            value={message}
-                                            onChange={(e) => setMessage(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleSendMessage();
-                                                }
-                                            }}
-                                            placeholder="Digite sua mensagem..."
-                                            disabled={loading}
-                                        />
-                                        <div className="input-buttons">
-                                            <input
-                                                type="file"
-                                                ref={fileInputRef}
-                                                onChange={handleFileSelect}
-                                                style={{ display: 'none' }}
-                                                multiple
-                                            />
-                                            <button 
-                                                className="attach-btn"
-                                                onClick={() => {
-                                                    if (fileInputRef.current) {
-                                                        fileInputRef.current.click();
-                                                    }
-                                                }}
-                                                disabled={loading}
-                                            >
-                                                📎
-                                            </button>
-                                            <button 
-                                                className="send-btn"
-                                                onClick={handleSendMessage}
-                                                disabled={loading || (!message.trim() && attachedFiles.length === 0)}
-                                            >
-                                                {loading ? '⏳' : '➤'}
-                                            </button>
+                                        
+                                        {/* Input Area */}
+                                        <div className="input-area">
+                                            {attachedFiles.length > 0 && (
+                                                <div className="attached-files">
+                                                    {attachedFiles.map((file, index) => (
+                                                        <div key={index} className="file-preview">
+                                                            <div className="file-icon">
+                                                                {file.type && file.type.includes('pdf') ? '📄' : '📎'}
+                                                            </div>
+                                                            <div className="file-info">
+                                                                <div className="file-name">{file.name}</div>
+                                                                <div className="file-size">{formatFileSize(file.size)}</div>
+                                                            </div>
+                                                            <button 
+                                                                className="remove-file-btn"
+                                                                onClick={() => removeFile(index)}
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            
+                                            <div className="input-container">
+                                                <textarea
+                                                    ref={inputRef}
+                                                    value={message}
+                                                    onChange={(e) => setMessage(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                                            e.preventDefault();
+                                                            handleSendMessage();
+                                                        }
+                                                    }}
+                                                    placeholder="Digite sua mensagem..."
+                                                    disabled={loading}
+                                                />
+                                                <div className="input-buttons">
+                                                    <input
+                                                        type="file"
+                                                        ref={fileInputRef}
+                                                        onChange={handleFileSelect}
+                                                        style={{ display: 'none' }}
+                                                        multiple
+                                                    />
+                                                    <button 
+                                                        className="attach-btn"
+                                                        onClick={() => {
+                                                            if (fileInputRef.current) {
+                                                                fileInputRef.current.click();
+                                                            }
+                                                        }}
+                                                        disabled={loading}
+                                                    >
+                                                        📎
+                                                    </button>
+                                                    <button 
+                                                        className="send-btn"
+                                                        onClick={handleSendMessage}
+                                                        disabled={loading || (!message.trim() && attachedFiles.length === 0)}
+                                                    >
+                                                        {loading ? '⏳' : '➤'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </React.Fragment>
+                                ) : (
+                                    <div className="empty-state">
+                                        <div className="empty-state-content">
+                                            <h2>👋 Bem-vindo ao Horizont IA</h2>
+                                            <p>Clique em "Nova Conversa" para começar</p>
                                         </div>
                                     </div>
-                                </div>
+                                )}
                             </React.Fragment>
-                        ) : (
-                            <div className="empty-state">
-                                <div className="empty-state-content">
-                                    <h2>👋 Bem-vindo ao Horizont IA</h2>
-                                    <p>Clique em "Nova Conversa" para começar</p>
-                                </div>
-                            </div>
                         )}
                     </div>
                     
@@ -1743,14 +1729,6 @@
                         chatData={currentChat}
                         username={user}
                     />
-                    
-                    {/* Admin Panel */}
-                    {showAdminPanel && (
-                        <AdminPanel 
-                            isOpen={showAdminPanel}
-                            onClose={() => setShowAdminPanel(false)}
-                        />
-                    )}
                 </div>
             );
         };
