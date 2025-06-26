@@ -171,20 +171,20 @@ def process_claude_message(messages, max_retries=1):
                 logger.warning("Nenhum prompt do sistema encontrado, usando prompt padrão")
                 system_prompt = "Você é um assistente especializado em investimentos da Horizont Investimentos."
             
-            # Verificar tamanho total das mensagens e limitar para 0.5 CPU
-            total_tokens = sum(len(msg["content"].split()) for msg in messages) * 2  # Estimativa aproximada
+            # Verificar tamanho total das mensagens e limitar para 512MB RAM
+            total_tokens = len(system_prompt.split()) * 2  # Apenas o prompt do sistema
             
             # Ajustar max_tokens com base no tamanho da entrada (otimizado para 512MB RAM)
-            max_tokens = min(2048, max(512, total_tokens))  # Reduzido drasticamente para 2048 max
+            max_tokens = min(1024, max(256, total_tokens))  # Reduzido ainda mais
             
             # Ajustar temperatura com base no tipo de resposta
             temp = 0.7
-            timeout = 60.0  # Reduzido para 60s
+            timeout = 45.0  # Reduzido para 45s
             
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
-                max_tokens = 1536  # Reduzido drasticamente para 1536 para gráficos
-                timeout = 90.0  # Reduzido para 90s para gráficos
+                max_tokens = 768  # Reduzido ainda mais para gráficos
+                timeout = 60.0  # Reduzido para 60s para gráficos
                 logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s")
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
@@ -311,27 +311,15 @@ def message():
             if pdf_text:
                 message_content += f"\n\nConteúdo do PDF:\n{pdf_text}"
 
-        # Obter mensagens anteriores do chat
+        # Obter mensagens anteriores do chat - REMOVIDO para economizar memória
         messages = []
-        if chat_id:
-            chat_messages = get_chat_messages(chat_id)
-            # Só incluir mensagens se não for um reset de contexto
-            if chat_messages and len(chat_messages) > 0:
-                # Limitar o número de mensagens para evitar timeouts
-                max_messages = 5  # Reduzido drasticamente de 10 para 5 mensagens
-                if len(chat_messages) > max_messages:
-                    # Pegar apenas as últimas mensagens
-                    chat_messages = chat_messages[-max_messages:]
-                    logger.info(f"[{request_id}] Limitando contexto a {max_messages} mensagens (de {len(chat_messages) + max_messages} total)")
-                
-                messages = [{"role": msg["role"], "content": msg["content"]} for msg in chat_messages]
+        # Não carregar mensagens anteriores - apenas usar o prompt do sistema
         
         # Adicionar nova mensagem
         messages.append({"role": "user", "content": message_content})
         
+        logger.info(f"[{request_id}] Enviando apenas mensagem atual + prompt do sistema")
         logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages)} mensagens")
-        if len(messages) == 1:
-            logger.info("[{request_id}] Contexto limpo - apenas mensagem atual")
 
         try:
             # Processar mensagem com retry e timeout
