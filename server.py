@@ -231,6 +231,8 @@ def send_message():
             logger.info("Chamando API do Claude...")
             try:
                 logger.info("Tentando fazer chamada com client configurado...")
+                logger.info("Verificando configuração da API key:")
+                logger.info(f"API key começa com: {api_key[:7]} e termina com: {api_key[-4:]}")
                 response = client.messages.create(
                     model="claude-3-haiku-20240307",
                     max_tokens=4096,
