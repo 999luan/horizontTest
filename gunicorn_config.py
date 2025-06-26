@@ -15,8 +15,8 @@ threads = 4  # Increased from 2
 worker_connections = 1000  # Increased from 500
 
 # Timeouts
-timeout = 120  # Increased from 60 to 120 seconds for Claude API calls
-graceful_timeout = 60  # Increased from 30 to 60 seconds
+timeout = 180  # Increased from 120 to 180 seconds for complex Claude API calls
+graceful_timeout = 90  # Increased from 60 to 90 seconds
 keepalive = 2
 
 # Logging
