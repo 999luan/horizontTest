@@ -183,9 +183,9 @@ def process_claude_message(messages, max_retries=1):
             
             if any("[GRAFICO_DADOS]" in msg["content"] for msg in messages):
                 temp = 0.1  # Menor temperatura para respostas estruturadas
-                max_tokens = 768  # Reduzido ainda mais para gráficos
-                timeout = 60.0  # Reduzido para 60s para gráficos
-                logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s")
+                max_tokens = 1024  # Aumentado para 1024 para gráficos (era 768)
+                timeout = 90.0  # Aumentado para 90s para gráficos (era 60s)
+                logger.info(f"Detectado pedido de gráfico - usando timeout de {timeout}s e {max_tokens} tokens")
             
             logger.info(f"Enviando para Claude com system prompt: {len(system_prompt)} caracteres")
             logger.info(f"Configuração: max_tokens={max_tokens}, temperature={temp}, timeout={timeout}s")
@@ -311,15 +311,26 @@ def message():
             if pdf_text:
                 message_content += f"\n\nConteúdo do PDF:\n{pdf_text}"
 
-        # Obter mensagens anteriores do chat - REMOVIDO para economizar memória
+        # Obter apenas a última mensagem do assistente como contexto (para referenciar dados)
         messages = []
-        # Não carregar mensagens anteriores - apenas usar o prompt do sistema
+        if chat_id:
+            chat_messages = get_chat_messages(chat_id)
+            if chat_messages and len(chat_messages) > 0:
+                # Pegar apenas a última mensagem do assistente (se existir)
+                last_assistant_msg = None
+                for msg in reversed(chat_messages):
+                    if msg["role"] == "assistant":
+                        last_assistant_msg = msg
+                        break
+                
+                if last_assistant_msg:
+                    messages.append({"role": "assistant", "content": last_assistant_msg["content"]})
+                    logger.info(f"[{request_id}] Incluindo última resposta do assistente como contexto")
         
         # Adicionar nova mensagem
         messages.append({"role": "user", "content": message_content})
         
-        logger.info(f"[{request_id}] Enviando apenas mensagem atual + prompt do sistema")
-        logger.info(f"[{request_id}] Mensagens preparadas para o Claude: {len(messages)} mensagens")
+        logger.info(f"[{request_id}] Enviando contexto mínimo: {len(messages)} mensagens")
 
         try:
             # Processar mensagem com retry e timeout
