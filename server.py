@@ -296,8 +296,14 @@ def send_message():
                 response_text = ""
                 for block in content:
                     logger.info(f"Processando bloco: {block}")
-                    if isinstance(block, dict) and block.get('type') == 'text':
-                        response_text += block.get('text', '')
+                    # Extract text from the block's string representation
+                    block_str = str(block)
+                    if 'text=' in block_str:
+                        # Extract text between single quotes after 'text='
+                        text_start = block_str.find("text='") + 6
+                        text_end = block_str.find("'", text_start)
+                        if text_start > 5 and text_end > text_start:
+                            response_text += block_str[text_start:text_end]
                         
                 if not response_text:
                     logger.error("Texto da resposta do Claude está vazio")
