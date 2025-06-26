@@ -37,9 +37,11 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
 # Cliente Anthropic
-client = anthropic.Anthropic(
-    api_key=os.getenv('ANTHROPIC_API_KEY')
-)
+api_key = os.getenv('ANTHROPIC_API_KEY')
+if not api_key:
+    raise ValueError("ANTHROPIC_API_KEY environment variable is required")
+
+client = anthropic.Anthropic(api_key=api_key)
 
 def extract_pdf_text(file_data):
     try:
@@ -203,13 +205,16 @@ def send_message():
                 for msg in conversation
             ])
             
-            response = client.messages.create(
+            prompt = "\n\nHuman: " + "\n\nHuman: ".join(msg["content"] for msg in messages_for_claude if msg["role"] == "user") + "\n\nAssistant: "
+            
+            response = client.completions.create(
+                prompt=prompt,
+                stop_sequences=["\n\nHuman:"],
                 model="claude-3-haiku-20240307",
-                max_tokens=4096,
-                messages=messages_for_claude
+                max_tokens_to_sample=4096,
             )
             
-            assistant_message = response.content[0].text
+            assistant_message = response.completion
         except Exception as e:
             logger.error(f"Erro na chamada do Claude: {e}")
             return jsonify({"success": False, "message": "Error communicating with Claude"}), 500
