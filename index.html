@@ -2297,7 +2297,7 @@
                     }, [
                         messages.map((msg, index) =>
                             React.createElement('div', {
-                                key: index,
+                                key: `msg-${msg.role}-${index}-${msg.content ? msg.content.substring(0, 10) : 'empty'}`,
                                 className: 'message ' + msg.role
                             }, [
                                 React.createElement('div', {
@@ -2425,7 +2425,7 @@
                                 className: 'files-list'
                             }, selectedFiles.map((file, index) => 
                                 React.createElement('div', {
-                                    key: index,
+                                    key: `file-${file.name}-${index}`,
                                     className: 'file-item'
                                 }, [
                                     file.name,

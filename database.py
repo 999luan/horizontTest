@@ -226,18 +226,13 @@ def add_message_to_chat(chat_id, role, content):
             VALUES (%s, %s, %s)
         """, (chat_id, role, content))
         
-        print("Mensagem adicionada, atualizando contexto...")
-        # Atualizar o contexto do chat
+        print("Mensagem adicionada, atualizando timestamp...")
+        # Apenas atualizar o timestamp da última mensagem (mais rápido)
         cursor.execute("""
             UPDATE chats 
-            SET context = JSON_ARRAY_APPEND(
-                COALESCE(context, '[]'),
-                '$',
-                %s
-            ),
-            last_message_at = CURRENT_TIMESTAMP
+            SET last_message_at = CURRENT_TIMESTAMP
             WHERE id = %s
-        """, (json.dumps({'role': role, 'content': content}), chat_id))
+        """, (chat_id,))
         
         connection.commit()
         print("Mensagem salva com sucesso!")
