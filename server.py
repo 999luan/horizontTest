@@ -236,7 +236,8 @@ def send_message():
                 response = client.messages.create(
                     model="claude-3-haiku-20240307",
                     max_tokens=4096,
-                    messages=messages_for_claude
+                    messages=messages_for_claude,
+                    system=str(system_prompt)
                 )
                 logger.info("Resposta recebida do Claude")
             except anthropic.APIError as e:
