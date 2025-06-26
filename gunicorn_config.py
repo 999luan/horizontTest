@@ -6,23 +6,23 @@ import threading
 
 # Server socket
 bind = "0.0.0.0:10000"
-backlog = 2048
+backlog = 1024  # Reduced from 2048
 
-# Worker processes
-workers = 1
+# Worker processes - optimized for free tier
+workers = 1  # Single worker for limited memory
 worker_class = 'sync'
-threads = 4
-worker_connections = 1000
+threads = 2  # Reduced from 4
+worker_connections = 500  # Reduced from 1000
 
 # Timeouts
-timeout = 180  # 180 segundos (3 min) para acomodar cold start + processamento
-graceful_timeout = 120  # 2 min para finalização graciosa
+timeout = 60  # Reduced from 180 to 60 seconds
+graceful_timeout = 30  # Reduced from 120 to 30 seconds
 keepalive = 2
 
 # Logging
 accesslog = '-'
 errorlog = '-'
-loglevel = 'debug'
+loglevel = 'info'  # Changed from debug to reduce log volume
 
 # Process naming
 proc_name = 'horizont'
@@ -45,12 +45,12 @@ capture_output = True
 enable_stdio_inheritance = True
 
 # Memory management
-max_requests = 50
+max_requests = 25  # Reduced from 50
 max_requests_jitter = 5
 worker_tmp_dir = "/tmp"
 
 # Prevent workers from hanging
-check_worker_timeout = 30  # Check worker health every 30 seconds
+check_worker_timeout = 30
 
 # SSL
 ssl_version = 'TLSv1_2'
@@ -97,9 +97,6 @@ def post_request(worker, req, environ, resp):
 
 def child_exit(server, worker):
     pass
-
-def worker_abort(worker):
-    worker.log.info("worker received SIGABRT signal")
 
 def on_exit(server):
     pass

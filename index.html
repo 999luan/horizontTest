@@ -1038,6 +1038,25 @@
             background-color: var(--danger-color);
             opacity: 0.7;
         }
+
+        .chart-container {
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+        
+        .chart-container canvas {
+            max-width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                padding: 10px;
+                margin: 10px 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1050,10 +1069,189 @@
         
         // Utility Functions
         const renderMessage = (content) => {
+            // Procurar por dados do gráfico
+            const chartMatch = content.match(/\[GRAFICO_DADOS\]([\s\S]*?)\[\/GRAFICO_DADOS\]/);
+            
+            if (chartMatch) {
+                try {
+                    const chartData = JSON.parse(chartMatch[1]);
+                    const chartComponent = React.createElement(Chart, { data: chartData });
+                    const textContent = content.replace(/\[GRAFICO_DADOS\][\s\S]*?\[\/GRAFICO_DADOS\]/, '');
+                    const textHtml = marked.parse(textContent);
+                    
+                    return React.createElement('div', null, [
+                        React.createElement('div', { 
+                            key: 'text',
+                            dangerouslySetInnerHTML: { __html: textHtml }
+                        }),
+                        React.createElement('div', { 
+                            key: 'chart',
+                            className: 'chart-container'
+                        }, chartComponent)
+                    ]);
+                } catch (e) {
+                    console.error('Erro ao processar dados do gráfico:', e);
+                }
+            }
+            
             const html = marked.parse(content);
             return React.createElement('div', { dangerouslySetInnerHTML: { __html: html } });
         };
-        
+
+        // Chart Component
+        const Chart = ({ data }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
+
+            useEffect(() => {
+                if (!chartRef.current) return;
+
+                // Destruir gráfico anterior se existir
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
+                // Preparar dados para o gráfico
+                const labels = Array.from({ length: data.years * 12 + 1 }, (_, i) => i);
+                const datasets = Object.entries(data.products).map(([name, product]) => {
+                    const monthlyRate = product.rate / 12;
+                    const monthlyMultiplier = Math.pow(1 + (product.rate / 100), 1/12);
+                    
+                    const values = labels.map(month => {
+                        return data.initialValue * Math.pow(monthlyMultiplier, month);
+                    });
+
+                    return {
+                        label: name,
+                        data: values,
+                        borderColor: getRandomColor(),
+                        backgroundColor: 'transparent',
+                        tension: 0.4
+                    };
+                });
+
+                // Criar novo gráfico
+                const ctx = chartRef.current.getContext('2d');
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: data.title,
+                                color: '#ffffff',
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    color: '#ffffff',
+                                    padding: 20,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL'
+                                        }).format(context.parsed.y);
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Meses',
+                                    color: '#ffffff'
+                                },
+                                ticks: {
+                                    color: '#ffffff'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Valor (R$)',
+                                    color: '#ffffff'
+                                },
+                                ticks: {
+                                    color: '#ffffff',
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL',
+                                            notation: 'compact',
+                                            compactDisplay: 'short'
+                                        }).format(value);
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [data]);
+
+            return React.createElement('canvas', {
+                ref: chartRef,
+                style: {
+                    width: '100%',
+                    height: '400px',
+                    marginTop: '20px',
+                    marginBottom: '20px'
+                }
+            });
+        };
+
+        // Função auxiliar para gerar cores aleatórias
+        const getRandomColor = () => {
+            const colors = [
+                '#2563eb', // Azul
+                '#059669', // Verde
+                '#dc2626', // Vermelho
+                '#d97706', // Laranja
+                '#7c3aed', // Roxo
+                '#db2777', // Rosa
+                '#2dd4bf', // Turquesa
+                '#f59e0b'  // Amarelo
+            ];
+            return colors[Math.floor(Math.random() * colors.length)];
+        };
+
         // API Functions
         const api = {
             login: async (username, password) => {
@@ -1235,250 +1433,6 @@
                             {error && <div className="login-error">{error}</div>}
                         </form>
                     </div>
-                </div>
-            );
-        };
-        
-        // Chart Component
-        const Chart = ({ data, onSave }) => {
-            const chartRef = useRef(null);
-            const chartId = useRef(`chart-${Date.now()}`).current;
-            
-            useEffect(() => {
-                if (!data || !chartRef.current) return;
-                
-                let chart = null;
-                try {
-                    // Se data for string, tenta fazer parse
-                    let chartData = data;
-                    if (typeof data === 'string') {
-                        try {
-                            // Remove qualquer caractere inválido no início
-                            const cleanJson = data.replace(/^\s*[\]\[,]\s*/, '');
-                            chartData = JSON.parse(cleanJson);
-                        } catch (e) {
-                            console.error('Erro ao fazer parse dos dados do gráfico:', e);
-                            return;
-                        }
-                    }
-                    
-                    // Extrair dados customizados se existirem
-                    let traces = [];
-                    let layout = {};
-                    
-                    if (chartData.products) {
-                        // Gráfico customizado com produtos específicos
-                        const years = Array.from({ length: (chartData.years || 5) + 1 }, (_, i) => i);
-                        const initialValue = chartData.initialValue || 100000;
-                        
-                        Object.entries(chartData.products).forEach(([name, info]) => {
-                            let yearlyMultiplier;
-                            
-                            // Usar yearlyMultiplier se disponível, senão calcular
-                            if (info.yearlyMultiplier) {
-                                yearlyMultiplier = info.yearlyMultiplier;
-                            } else if (info.monthlyRate) {
-                                yearlyMultiplier = Math.pow(1 + info.monthlyRate, 12);
-                            } else if (info.rate) {
-                                yearlyMultiplier = 1 + (info.rate / 100);
-                            } else {
-                                yearlyMultiplier = 1.1; // fallback
-                            }
-                            
-                            traces.push({
-                                x: years,
-                                y: years.map(year => initialValue * Math.pow(yearlyMultiplier, year)),
-                                name: name,
-                                mode: 'lines+markers',
-                                line: { width: 3 },
-                                text: years.map(year => {
-                                    const value = initialValue * Math.pow(yearlyMultiplier, year);
-                                    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                                }),
-                                hovertemplate: '%{text}<extra></extra>'
-                            });
-                        });
-                        
-                        layout = {
-                            title: chartData.title || 'Comparativo de Investimentos',
-                            xaxis: { 
-                                title: 'Anos',
-                                gridcolor: 'rgba(255,255,255,0.1)'
-                            },
-                            yaxis: { 
-                                title: 'Valor',
-                                tickformat: '~s',
-                                tickmode: 'auto',
-                                nticks: 8,
-                                gridcolor: 'rgba(255,255,255,0.1)',
-                                tickfont: { size: 11 }
-                            }
-                        };
-                    } else {
-                        // Gráfico padrão
-                        const years = Array.from({ length: (data.years || 5) + 1 }, (_, i) => i);
-                        const initialValue = data.initialValue || 100000;
-                        
-                        traces = [
-                            {
-                                x: years,
-                                y: years.map(year => initialValue * Math.pow(1.0775, year)),
-                                name: 'Poupança (7.75%)',
-                                line: { color: '#ff6b6b' }
-                            },
-                            {
-                                x: years,
-                                y: years.map(year => initialValue * Math.pow(1.1088, year)),
-                                name: 'CDI (10.88%)',
-                                line: { color: '#ffa726' }
-                            },
-                            {
-                                x: years,
-                                y: years.map(year => initialValue * Math.pow(1.1539, year)),
-                                name: 'Horizont Smart (15.39%)',
-                                line: { color: '#51cf66' }
-                            },
-                            {
-                                x: years,
-                                y: years.map(year => initialValue * Math.pow(1.1937, year)),
-                                name: 'Horizont Trend (19.37%)',
-                                line: { color: '#339af0' }
-                            }
-                        ];
-                        
-                        layout = {
-                            title: '📊 Comparativo de Investimentos',
-                            xaxis: { 
-                                title: 'Anos',
-                                gridcolor: 'rgba(255,255,255,0.1)'
-                            },
-                            yaxis: { 
-                                title: 'Valor (R$)',
-                                tickformat: ',.0f',
-                                gridcolor: 'rgba(255,255,255,0.1)'
-                            }
-                        };
-                    }
-                    
-                    // Layout comum
-                    layout = {
-                        ...layout,
-                        plot_bgcolor: 'rgba(0,0,0,0)',
-                        paper_bgcolor: 'rgba(0,0,0,0)',
-                        font: { color: 'white', size: 12 },
-                        showlegend: true,
-                        legend: {
-                            x: 0,
-                            y: 1,
-                            bgcolor: 'rgba(0,0,0,0.5)'
-                        },
-                        margin: { l: 100, r: 20, t: 60, b: 60 },
-                        autosize: true,
-                        yaxis: {
-                            ...layout.yaxis,
-                            tickformat: ',.0f',
-                            tickprefix: 'R$ ',
-                            separatethousands: true
-                        }
-                    };
-                    
-                    // Configurar locale para português
-                    const config = {
-                        responsive: true,
-                        displayModeBar: false,
-                        locale: 'pt-br',
-                        locales: {
-                            'pt-br': {
-                                format: {
-                                    thousands: '.',
-                                    decimal: ','
-                                }
-                            }
-                        }
-                    };
-                    
-                    chart = Plotly.newPlot(chartRef.current, traces, layout, config);
-                    
-                    // Resize handler
-                    const handleResize = () => {
-                        if (chartRef.current) {
-                            Plotly.Plots.resize(chartRef.current);
-                        }
-                    };
-                    
-                    window.addEventListener('resize', handleResize);
-                    
-                    return () => {
-                        window.removeEventListener('resize', handleResize);
-                        if (chartRef.current) {
-                            Plotly.purge(chartRef.current);
-                        }
-                    };
-                } catch (error) {
-                    console.error('Erro ao criar gráfico:', error);
-                    // Cleanup on error
-                    if (chart && chartRef.current) {
-                        Plotly.purge(chartRef.current);
-                    }
-                }
-            }, [data]);
-            
-            const handleSave = async () => {
-                if (!chartRef.current) return;
-                
-                try {
-                    await Plotly.downloadImage(chartRef.current, {
-                        format: 'png',
-                        width: 1200,
-                        height: 800,
-                        filename: `horizont-comparativo-${Date.now()}`
-                    });
-                } catch (err) {
-                    console.error('Erro ao salvar gráfico:', err);
-                    alert('Não foi possível salvar o gráfico. Por favor, tente novamente.');
-                }
-            };
-            
-            const handleShare = async () => {
-                if (!chartRef.current) return;
-                
-                try {
-                    const imgData = await Plotly.toImage(chartRef.current, {
-                        format: 'png',
-                        width: 1200,
-                        height: 800
-                    });
-                    
-                    const response = await fetch(imgData);
-                    const blob = await response.blob();
-                    const file = new File([blob], 'horizont-comparativo.png', { type: 'image/png' });
-                    
-                    if (navigator.share && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            title: 'Comparativo Horizont Investimentos',
-                            text: 'Veja o comparativo de rentabilidade dos investimentos',
-                            files: [file]
-                        });
-                    } else {
-                        handleSave();
-                    }
-                } catch (err) {
-                    console.error('Erro ao compartilhar gráfico:', err);
-                    handleSave();
-                }
-            };
-            
-            return (
-                <div className="chart-container">
-                    <div className="chart-actions">
-                        <button className="chart-btn" onClick={handleSave}>
-                            💾 Salvar
-                        </button>
-                        <button className="chart-btn" onClick={handleShare}>
-                            📤 Enviar
-                        </button>
-                    </div>
-                    <div ref={chartRef} id={chartId} style={{ width: '100%', height: '300px' }}></div>
                 </div>
             );
         };

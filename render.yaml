@@ -3,7 +3,7 @@ services:
     name: horizont
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
+    startCommand: gunicorn wsgi:app -c gunicorn_config.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.12
@@ -30,8 +30,8 @@ services:
     scaling:
       minInstances: 1
       maxInstances: 1
-      targetMemoryPercent: 70
-      targetCPUPercent: 70
+      targetMemoryPercent: 85
+      targetCPUPercent: 85
     initialDeployHook: |
       echo "Warming up application..."
       curl -X GET http://localhost:10000/health
