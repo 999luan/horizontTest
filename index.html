@@ -951,22 +951,46 @@
 
                     // Check if response is ok before trying to parse JSON
                     if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Server error:', response.status, errorText);
-                        throw new Error(`Server error: ${response.status} - ${errorText || 'No error details available'}`);
+                        let errorMessage = 'Erro no servidor';
+                        try {
+                            const errorText = await response.text();
+                            if (errorText) {
+                                try {
+                                    const errorJson = JSON.parse(errorText);
+                                    errorMessage = errorJson.message || errorMessage;
+                                } catch (e) {
+                                    // If can't parse as JSON, use the raw text
+                                    errorMessage = errorText;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Erro ao ler resposta de erro:', e);
+                        }
+                        
+                        if (response.status === 502) {
+                            errorMessage = 'O servidor está temporariamente indisponível. Por favor, tente novamente em alguns instantes.';
+                        } else if (response.status === 504) {
+                            errorMessage = 'A requisição demorou muito para responder. Por favor, tente novamente.';
+                        }
+                        
+                        throw new Error(`${errorMessage} (Status: ${response.status})`);
                     }
 
-                    // Try to parse JSON response
+                    // Try to parse JSON response with better error handling
                     let data;
                     try {
-                        data = await response.json();
+                        const responseText = await response.text();
+                        if (!responseText) {
+                            throw new Error('Resposta vazia do servidor');
+                        }
+                        data = JSON.parse(responseText);
                     } catch (e) {
-                        console.error('JSON parse error:', e);
-                        throw new Error('Invalid response from server');
+                        console.error('Erro ao processar resposta:', e);
+                        throw new Error('Não foi possível processar a resposta do servidor. Por favor, tente novamente.');
                     }
 
                     if (!data.success) {
-                        throw new Error(data.message || 'Unknown error');
+                        throw new Error(data.message || 'Erro desconhecido');
                     }
 
                     return {
@@ -974,8 +998,9 @@
                         chart_data: data.chart_data
                     };
                 } catch (error) {
-                    console.error('API call error:', error);
-                    throw error;
+                    console.error('Erro na API:', error);
+                    // Re-throw with user-friendly message
+                    throw new Error(error.message || 'Ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.');
                 }
             },
             
