@@ -50,17 +50,8 @@ if api_key:
 
 logger.info("Inicializando cliente do Claude...")
 try:
-    client = anthropic.Anthropic(
-        api_key=api_key,
-        default_headers={
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json"
-        }
-    )
+    client = anthropic.Anthropic(api_key=api_key)
     logger.info("Cliente do Claude inicializado com sucesso!")
-    logger.info("Headers configurados:")
-    logger.info(f"anthropic-version: {client._client.default_headers.get('anthropic-version')}")
-    logger.info(f"content-type: {client._client.default_headers.get('content-type')}")
 except Exception as e:
     logger.error(f"Erro ao inicializar cliente do Claude: {e}")
     raise
